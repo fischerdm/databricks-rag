@@ -1,9 +1,11 @@
 import logging
 import uuid
+from pathlib import Path
 
+from chainlit.utils import mount_chainlit
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import StreamingResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 
 from app.config import get_settings
 from app.schemas import DocumentInput, IndexResponse, QueryInput, SearchFilters
@@ -24,6 +26,11 @@ def index_document_task(document_id: str, content: str, metadata: dict) -> None:
         logger.info("Indexed document %s (%d chunks)", document_id, n_chunks)
     except Exception:
         logger.exception("Failed to index document %s", document_id)
+
+
+@app.get("/", include_in_schema=False)
+async def root() -> RedirectResponse:
+    return RedirectResponse("/ui")
 
 
 @app.get("/health")
@@ -71,6 +78,10 @@ async def query_rag(payload: QueryInput) -> StreamingResponse:
         llm.stream_answer(payload.question, chunks, applied),
         media_type="text/event-stream",
     )
+
+
+# Chainlit chat UI, served from the same process; it calls /query like any other client.
+mount_chainlit(app=app, target=str(Path(__file__).with_name("ui.py")), path="/ui")
 
 
 if __name__ == "__main__":
