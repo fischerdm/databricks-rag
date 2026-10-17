@@ -6,7 +6,7 @@ import chromadb
 from openai import OpenAI
 
 from app.config import get_settings
-from app.schemas import MetadataValue, RetrievedChunk
+from app.schemas import MetadataValue, RetrievedChunk, SearchFilters
 
 
 @lru_cache
@@ -77,8 +77,40 @@ def add_document(document_id: str, content: str, metadata: dict[str, MetadataVal
     return add_documents([(document_id, content, metadata)])
 
 
-def search(query: str, top_k: int) -> list[RetrievedChunk]:
-    result = _collection().query(query_embeddings=embed([query]), n_results=top_k)
+def update_metadata(documents: list[tuple[str, str, dict[str, MetadataValue | None]]]) -> int:
+    """Rewrite chunk metadata in place, keeping the stored embeddings.
+
+    Takes the same tuples as add_documents. Chroma merges metadata on update, so a key
+    set to None is deleted. Returns the number of chunks updated.
+    """
+    settings = get_settings()
+    ids, metadatas = [], []
+    for document_id, content, metadata in documents:
+        for i, _ in enumerate(chunk_text(content, settings.chunk_size, settings.chunk_overlap)):
+            ids.append(f"{document_id}:{i}")
+            metadatas.append({**metadata, "document_id": document_id, "chunk": i})
+    if ids:
+        _collection().update(ids=ids, metadatas=metadatas)
+    return len(ids)
+
+
+def build_filter(filters: SearchFilters) -> dict | None:
+    """Translate search filters into a Chroma `where` clause."""
+    conditions = []
+    if filters.date_from:
+        conditions.append({"date_int": {"$gte": int(filters.date_from.strftime("%Y%m%d"))}})
+    if filters.date_to:
+        conditions.append({"date_int": {"$lte": int(filters.date_to.strftime("%Y%m%d"))}})
+    if filters.topic:
+        conditions.append({"topics": {"$contains": filters.topic.lower()}})
+    if not conditions:
+        return None
+    return conditions[0] if len(conditions) == 1 else {"$and": conditions}
+
+
+def search(query: str, top_k: int, filters: SearchFilters | None = None) -> list[RetrievedChunk]:
+    where = build_filter(filters) if filters else None
+    result = _collection().query(query_embeddings=embed([query]), n_results=top_k, where=where)
     return [
         RetrievedChunk(text=text, metadata=metadata or {}, distance=distance)
         for text, metadata, distance in zip(

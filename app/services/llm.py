@@ -7,7 +7,7 @@ from functools import lru_cache
 from openai import AsyncOpenAI
 
 from app.config import get_settings
-from app.schemas import RetrievedChunk
+from app.schemas import RetrievedChunk, SearchFilters
 
 SYSTEM_PROMPT = (
     "You are a financial news assistant. Answer the question using only the provided context. "
@@ -30,8 +30,11 @@ def _sse(event: str, data: object) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
-async def stream_answer(question: str, chunks: list[RetrievedChunk]) -> AsyncIterator[str]:
-    """Yield Server-Sent Events: one 'sources' event, many 'token' events, then 'done'."""
+async def stream_answer(
+    question: str, chunks: list[RetrievedChunk], filters: SearchFilters
+) -> AsyncIterator[str]:
+    """Yield Server-Sent Events: 'filters' and 'sources' once, many 'token' events, then 'done'."""
+    yield _sse("filters", filters.model_dump(mode="json"))
     yield _sse("sources", [chunk.model_dump() for chunk in chunks])
 
     stream = await _client().chat.completions.create(

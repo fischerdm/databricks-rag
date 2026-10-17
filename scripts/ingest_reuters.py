@@ -21,6 +21,8 @@ from pathlib import Path
 ARCHIVE_URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/reuters21578-mld/reuters21578.tar.gz"
 ARCHIVE_PATH = Path("data/reuters21578/reuters21578.tar.gz")
 
+LABEL_FIELDS = ("topics", "places")
+
 ARTICLE_RE = re.compile(r"<REUTERS[^>]*NEWID=\"(\d+)\"[^>]*>(.*?)</REUTERS>", re.DOTALL)
 
 
@@ -29,9 +31,9 @@ def _tag(name: str, text: str) -> str:
     return html.unescape(match.group(1)).strip() if match else ""
 
 
-def _labels(name: str, text: str) -> str:
-    """Return the <D> entries of a label field (TOPICS, PLACES, ...) as a comma-separated string."""
-    return ",".join(re.findall(r"<D>(.*?)</D>", _tag(name, text)))
+def _labels(name: str, text: str) -> list[str]:
+    """Return the <D> entries of a label field (TOPICS, PLACES, ...)."""
+    return re.findall(r"<D>(.*?)</D>", _tag(name, text))
 
 
 def _parse_date(raw: str) -> datetime | None:
@@ -73,9 +75,11 @@ def iter_articles() -> Iterator[tuple[str, str, dict]]:
                     "source": "reuters-21578",
                     "reuters_id": int(new_id),
                     "title": title,
-                    "topics": _labels("TOPICS", article),
-                    "places": _labels("PLACES", article),
                 }
+                # Chroma rejects empty lists, so label fields are only set when present.
+                for key in LABEL_FIELDS:
+                    if labels := _labels(key.upper(), article):
+                        metadata[key] = labels
                 if date:
                     metadata["date"] = date.date().isoformat()
                     # Numeric copy so Chroma can range-filter ($gte/$lte only work on numbers).
@@ -90,6 +94,11 @@ def main() -> None:
     parser.add_argument("--limit", type=int, help="index at most N articles")
     parser.add_argument("--batch-size", type=int, default=100, help="articles per embedding request")
     parser.add_argument("--dry-run", action="store_true", help="parse and count without indexing")
+    parser.add_argument(
+        "--metadata-only",
+        action="store_true",
+        help="rewrite metadata of already indexed articles without re-embedding (no OpenAI cost)",
+    )
     args = parser.parse_args()
 
     download_archive()
@@ -102,7 +111,12 @@ def main() -> None:
         if batch and not args.dry_run:
             from app.services import vector
 
-            n_chunks += vector.add_documents(batch)
+            if args.metadata_only:
+                # Explicit None deletes label keys left over from an earlier index format.
+                batch[:] = [(i, c, {**dict.fromkeys(LABEL_FIELDS), **m}) for i, c, m in batch]
+                n_chunks += vector.update_metadata(batch)
+            else:
+                n_chunks += vector.add_documents(batch)
         batch.clear()
         print(f"\r{n_articles} articles, {n_chunks} chunks", end="", flush=True)
 

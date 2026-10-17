@@ -1,9 +1,10 @@
+from datetime import date
 from typing import Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
-# Chroma only accepts flat, primitive metadata values.
-MetadataValue = Union[str, int, float, bool]
+# Chroma only accepts flat metadata: primitives, or non-empty lists of them.
+MetadataValue = Union[str, int, float, bool, list[str]]
 
 
 class DocumentInput(BaseModel):
@@ -17,9 +18,25 @@ class IndexResponse(BaseModel):
     message: str
 
 
-class QueryInput(BaseModel):
+class SearchFilters(BaseModel):
+    date_from: date | None = Field(default=None, description="Earliest article date (inclusive)")
+    date_to: date | None = Field(default=None, description="Latest article date (inclusive)")
+    topic: str | None = Field(default=None, description="Reuters topic code, e.g. 'crude', 'acq', 'earn'")
+
+    @model_validator(mode="after")
+    def check_range(self) -> "SearchFilters":
+        if self.date_from and self.date_to and self.date_from > self.date_to:
+            raise ValueError("date_from must not be after date_to")
+        return self
+
+
+class QueryInput(SearchFilters):
     question: str = Field(min_length=1)
     top_k: int | None = Field(default=None, ge=1, le=20)
+    auto_filters: bool = Field(
+        default=True,
+        description="Extract date range and topic from the question; explicit filters take precedence",
+    )
 
 
 class RetrievedChunk(BaseModel):

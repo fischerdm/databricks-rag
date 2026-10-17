@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     openai_api_key: str
     chat_model: str = "gpt-4o-mini"
     embedding_model: str = "text-embedding-3-small"
+    # Extracts date/topic filters from questions. gpt-4o-mini mapped "OPEC" to "oilseed"
+    # in testing; the gpt-5.4 family got it right and nano was the fastest.
+    filter_model: str = "gpt-5.4-nano"
 
     chroma_path: str = "data/chroma"
     collection_name: str = "documents"
