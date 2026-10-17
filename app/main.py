@@ -5,7 +5,7 @@ from pathlib import Path
 from chainlit.utils import mount_chainlit
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import StreamingResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 
 from app.config import get_settings
 from app.schemas import DocumentInput, IndexResponse, QueryInput, SearchFilters
@@ -26,6 +26,11 @@ def index_document_task(document_id: str, content: str, metadata: dict) -> None:
         logger.info("Indexed document %s (%d chunks)", document_id, n_chunks)
     except Exception:
         logger.exception("Failed to index document %s", document_id)
+
+
+@app.get("/", include_in_schema=False)
+async def root() -> RedirectResponse:
+    return RedirectResponse("/ui")
 
 
 @app.get("/health")
