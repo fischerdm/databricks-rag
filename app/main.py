@@ -50,10 +50,12 @@ async def index_document(doc: DocumentInput, background_tasks: BackgroundTasks) 
 async def query_rag(payload: QueryInput) -> StreamingResponse:
     """
     Retrieve relevant context and stream the LLM's answer back token by token (SSE).
+
+    Optional `date_from`, `date_to` and `topic` restrict the search before ranking by similarity.
     """
     top_k = payload.top_k or get_settings().top_k
     # Chroma and the embedding call are synchronous; keep them off the event loop.
-    chunks = await run_in_threadpool(vector.search, payload.question, top_k)
+    chunks = await run_in_threadpool(vector.search, payload.question, top_k, payload)
     return StreamingResponse(
         llm.stream_answer(payload.question, chunks),
         media_type="text/event-stream",

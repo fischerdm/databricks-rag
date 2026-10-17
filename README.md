@@ -26,7 +26,9 @@ Interactive docs: http://127.0.0.1:8000/docs
 .venv/bin/python -m scripts.ingest_reuters               # full corpus
 ```
 
-Each chunk carries `title`, `date`, `date_int` (e.g. `19870315`, for range filters), `topics` and `places` as metadata. Re-running the script updates existing entries instead of duplicating them.
+Each chunk carries `title`, `date`, `date_int` (e.g. `19870315`, for range filters), `topics` and `places` (lists of Reuters codes) as metadata. Re-running the script updates existing entries instead of duplicating them.
+
+To refresh metadata on an existing index without re-embedding (e.g. after a metadata format change), run `python -m scripts.ingest_reuters --metadata-only`.
 
 ## Endpoints
 
@@ -43,5 +45,14 @@ curl -X POST localhost:8000/index -H 'Content-Type: application/json' \
 curl -N -X POST localhost:8000/query -H 'Content-Type: application/json' \
   -d '{"question": "What did the ECB decide?"}'
 ```
+
+`/query` accepts optional filters that restrict the search before ranking by similarity:
+
+```bash
+curl -N -X POST localhost:8000/query -H 'Content-Type: application/json' \
+  -d '{"question": "What happened to oil prices?", "date_from": "1987-10-19", "date_to": "1987-10-20", "topic": "crude"}'
+```
+
+`topic` is a Reuters topic code such as `crude`, `acq` (acquisitions), `earn` (earnings) or `money-fx`; the full list is in `all-topics-strings.lc.txt` inside the corpus archive.
 
 `/query` emits three event types: `sources` (the retrieved chunks, once), `token` (JSON-encoded text pieces), and `done`.
