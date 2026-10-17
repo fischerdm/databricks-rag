@@ -33,6 +33,10 @@ class SearchFilters(BaseModel):
 class QueryInput(SearchFilters):
     question: str = Field(min_length=1)
     top_k: int | None = Field(default=None, ge=1, le=20)
+    auto_filters: bool = Field(
+        default=True,
+        description="Extract date range and topic from the question; explicit filters take precedence",
+    )
 
 
 class RetrievedChunk(BaseModel):

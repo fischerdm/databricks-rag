@@ -6,8 +6,8 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 
 from app.config import get_settings
-from app.schemas import DocumentInput, IndexResponse, QueryInput
-from app.services import llm, vector
+from app.schemas import DocumentInput, IndexResponse, QueryInput, SearchFilters
+from app.services import filters, llm, vector
 
 logger = logging.getLogger(__name__)
 
@@ -52,12 +52,23 @@ async def query_rag(payload: QueryInput) -> StreamingResponse:
     Retrieve relevant context and stream the LLM's answer back token by token (SSE).
 
     Optional `date_from`, `date_to` and `topic` restrict the search before ranking by similarity.
+    With `auto_filters` (default), missing filters are extracted from the question by an LLM.
     """
     top_k = payload.top_k or get_settings().top_k
+    explicit = SearchFilters(**payload.model_dump(include=set(SearchFilters.model_fields)))
+    applied = explicit
+    if payload.auto_filters:
+        applied = filters.merge_filters(explicit, await filters.extract_filters(payload.question))
+
     # Chroma and the embedding call are synchronous; keep them off the event loop.
-    chunks = await run_in_threadpool(vector.search, payload.question, top_k, payload)
+    chunks = await run_in_threadpool(vector.search, payload.question, top_k, applied)
+    if not chunks and applied != explicit:
+        # Extracted filters can be too narrow (wrong topic, date outside the corpus); fall back.
+        applied = explicit
+        chunks = await run_in_threadpool(vector.search, payload.question, top_k, applied)
+
     return StreamingResponse(
-        llm.stream_answer(payload.question, chunks),
+        llm.stream_answer(payload.question, chunks, applied),
         media_type="text/event-stream",
     )
 

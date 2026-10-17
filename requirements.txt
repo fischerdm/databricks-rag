@@ -1,5 +1,5 @@
 fastapi>=0.115
 uvicorn[standard]>=0.30
 pydantic-settings>=2.4
-openai>=1.50
+openai>=3.0
 chromadb>=1.5
