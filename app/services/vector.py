@@ -54,17 +54,27 @@ def embed(texts: list[str]) -> list[list[float]]:
     return [item.embedding for item in response.data]
 
 
+def add_documents(documents: list[tuple[str, str, dict[str, MetadataValue]]]) -> int:
+    """Chunk, embed and store (document_id, content, metadata) tuples in one embedding call.
+
+    Returns the number of chunks written. Upserts by chunk id, so re-adding a document
+    with the same id overwrites it instead of duplicating it.
+    """
+    settings = get_settings()
+    ids, chunks, metadatas = [], [], []
+    for document_id, content, metadata in documents:
+        for i, chunk in enumerate(chunk_text(content, settings.chunk_size, settings.chunk_overlap)):
+            ids.append(f"{document_id}:{i}")
+            chunks.append(chunk)
+            metadatas.append({**metadata, "document_id": document_id, "chunk": i})
+    if chunks:
+        _collection().upsert(ids=ids, documents=chunks, embeddings=embed(chunks), metadatas=metadatas)
+    return len(chunks)
+
+
 def add_document(document_id: str, content: str, metadata: dict[str, MetadataValue]) -> int:
     """Chunk, embed and store a document. Returns the number of chunks written."""
-    settings = get_settings()
-    chunks = chunk_text(content, settings.chunk_size, settings.chunk_overlap)
-    _collection().upsert(
-        ids=[f"{document_id}:{i}" for i in range(len(chunks))],
-        documents=chunks,
-        embeddings=embed(chunks),
-        metadatas=[{**metadata, "document_id": document_id, "chunk": i} for i in range(len(chunks))],
-    )
-    return len(chunks)
+    return add_documents([(document_id, content, metadata)])
 
 
 def search(query: str, top_k: int) -> list[RetrievedChunk]:
