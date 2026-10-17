@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     chunk_overlap: int = 200
     top_k: int = 4
 
+    # Where the Chainlit UI (app/ui.py) reaches the API; it calls /query over HTTP.
+    api_url: str = "http://127.0.0.1:8000"
+
 
 @lru_cache
 def get_settings() -> Settings:

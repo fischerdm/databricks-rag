@@ -5,6 +5,7 @@ A minimal RAG backend: index text over an API, then ask questions and get a stre
 - **API:** FastAPI
 - **Embeddings / LLM:** OpenAI (`text-embedding-3-small`, `gpt-4o-mini` by default)
 - **Vector store:** Chroma (persisted locally in `data/chroma`)
+- **Chat UI:** Chainlit, served at `/ui`
 
 How it works, component by component: [docs/architecture.md](docs/architecture.md).
 
@@ -17,7 +18,17 @@ cp .env.example .env   # then set OPENAI_API_KEY
 .venv/bin/uvicorn app.main:app --reload
 ```
 
-Interactive docs: http://127.0.0.1:8000/docs
+Interactive docs: http://127.0.0.1:8000/docs · Chat UI: http://127.0.0.1:8000/ui
+
+## Chat UI
+
+[app/ui.py](app/ui.py) is a [Chainlit](https://docs.chainlit.io) app mounted into the API at `/ui`. It is a plain client of `/query`: it posts the question over HTTP and renders the SSE stream.
+
+- **Filters** appear as a collapsible step above each answer, showing what was actually applied (`filters` event).
+- **Sources** open in a side panel; the citation markers `[1]`, `[2]`, … in the answer link to them (`sources` event).
+- **Settings** (gear icon next to the input) set an explicit date range, topic and number of passages, or switch off automatic filter extraction.
+
+The UI reaches the API at `API_URL` (default `http://127.0.0.1:8000`); set it if you serve the API on another port. To run the UI on its own against a separate API process, use `.venv/bin/python -m chainlit run app/ui.py --port 8001` from the repo root; Chainlit also defaults to port 8000, and without `--port` the UI would send its queries to itself. Chainlit's own settings (name, file upload, theme) live in [.chainlit/config.toml](.chainlit/config.toml).
 
 ## Corpus: Reuters-21578
 

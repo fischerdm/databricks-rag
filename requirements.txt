@@ -3,3 +3,5 @@ uvicorn[standard]>=0.30
 pydantic-settings>=2.4
 openai>=3.0
 chromadb>=1.5
+chainlit>=2.12
+httpx-sse>=0.4

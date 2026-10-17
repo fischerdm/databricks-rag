@@ -1,6 +1,8 @@
 import logging
 import uuid
+from pathlib import Path
 
+from chainlit.utils import mount_chainlit
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
@@ -71,6 +73,10 @@ async def query_rag(payload: QueryInput) -> StreamingResponse:
         llm.stream_answer(payload.question, chunks, applied),
         media_type="text/event-stream",
     )
+
+
+# Chainlit chat UI, served from the same process; it calls /query like any other client.
+mount_chainlit(app=app, target=str(Path(__file__).with_name("ui.py")), path="/ui")
 
 
 if __name__ == "__main__":
