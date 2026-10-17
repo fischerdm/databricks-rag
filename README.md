@@ -28,7 +28,16 @@ Interactive docs: http://127.0.0.1:8000/docs · Chat UI: http://127.0.0.1:8000/u
 - **Sources** open in a side panel; the citation markers `[1]`, `[2]`, … in the answer link to them (`sources` event).
 - **Settings** (gear icon next to the input) set an explicit date range, topic and number of passages, or switch off automatic filter extraction.
 
-The UI reaches the API at `API_URL` (default `http://127.0.0.1:8000`); set it if you serve the API on another port. To run the UI on its own against a separate API process, use `.venv/bin/python -m chainlit run app/ui.py --port 8001` from the repo root; Chainlit also defaults to port 8000, and without `--port` the UI would send its queries to itself. Chainlit's own settings (name, file upload, theme) live in [.chainlit/config.toml](.chainlit/config.toml).
+The UI reaches the API at `API_URL` (default `http://127.0.0.1:8000`); set it if you serve the API on another port. Chainlit's own settings (name, file upload, theme) live in [.chainlit/config.toml](.chainlit/config.toml).
+
+To run the UI as a separate process instead, start both from the repo root, each in its own terminal, then open http://localhost:8001:
+
+| Terminal | Command | Port |
+|---|---|---|
+| 1: API | `.venv/bin/uvicorn app.main:app --reload` | 8000 |
+| 2: UI | `.venv/bin/python -m chainlit run app/ui.py --port 8001` | 8001 |
+
+Keep the `--port`: Chainlit also defaults to port 8000, and without it the UI would send its queries to itself.
 
 ## Corpus: Reuters-21578
 
