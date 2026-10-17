@@ -6,6 +6,8 @@ A minimal RAG backend: index text over an API, then ask questions and get a stre
 - **Embeddings / LLM:** OpenAI (`text-embedding-3-small`, `gpt-4o-mini` by default)
 - **Vector store:** Chroma (persisted locally in `data/chroma`)
 
+How it works, component by component: [docs/architecture.md](docs/architecture.md).
+
 ## Setup
 
 ```bash
