@@ -1,4 +1,9 @@
-# fastapi-rag-boilerplate
+# FastAPI RAG Boilerplate
+
+<p align="center">
+  <img src="docs/images/front.png" alt="Chat UI start screen" width="49%">
+  <img src="docs/images/example.png" alt="Example answer with filters and sources" width="49%">
+</p>
 
 A minimal RAG backend: index text over an API, then ask questions and get a streamed answer grounded in the indexed documents.
 
@@ -92,3 +97,32 @@ By default (`"auto_filters": true`) an LLM (`FILTER_MODEL`, default `gpt-5.4-nan
 - If the extraction fails, or its filters match nothing, the search falls back to the explicit filters only.
 
 `/query` emits four event types: `filters` (the filters actually applied, once), `sources` (the retrieved chunks, once), `token` (JSON-encoded text pieces), and `done`.
+
+## Towards production
+
+This is a boilerplate: it runs well on one machine for one user. Before exposing it to real traffic, these are the main gaps:
+
+- **Authentication and rate limiting.** `/index` and `/query` are open, so anyone who reaches the API can write to the index and may add junk or misleading documents. One request is enough to put a fake article into the corpus:
+
+  ```bash
+  curl -X POST localhost:8000/index -H 'Content-Type: application/json' \
+    -d '{"content": "Reuters, March 1987: OPEC agreed to double oil output...", "metadata": {"topics": ["crude"], "date_int": 19870315}}'
+  ```
+
+  After that, a question about oil in March 1987 can retrieve this text and cite it as a source, next to the real articles. Nothing records who added it. Every request also triggers OpenAI calls billed to the server's API key. Add API keys or OAuth (a FastAPI dependency), per-client rate limits, and a size limit on `/index` content.
+- **Durable indexing.** `BackgroundTasks` runs in the API process: a queued document is lost on restart, and the returned `document_id` cannot be looked up. Move indexing to a job queue (e.g. Arq, Celery, RQ) and add a status endpoint, plus endpoints to update and delete documents.
+- **A shared vector store.** Chroma runs embedded on local files, which ties the API to one process on one machine. Run Chroma in client/server mode or switch to a managed store (pgvector, Qdrant, …) so several workers or replicas can share the index.
+- **Resilience around OpenAI.** Set timeouts and retries with backoff, and send an `error` event on the SSE stream when generation fails midway, so clients can tell a broken answer from a finished one.
+- **Deployment.** A Dockerfile, no `--reload`, several workers, and a reverse proxy configured not to buffer SSE responses. Pin dependency versions with a lock file; `requirements.txt` only sets lower bounds.
+- **Observability.** Structured logs, request metrics, and traces of each step (filter extraction, retrieval, generation) with token usage and cost. `/health` is a liveness check only; add a readiness check that reaches the vector store.
+- **Tests and evaluation.** Unit and API tests in CI, and an evaluation set of questions with expected sources to catch retrieval and answer-quality regressions when prompts, models or chunking change.
+- **Security of the content itself.** Indexed documents end up in the prompt, so untrusted documents can carry prompt injections. Restrict who can index, and treat answers as untrusted output.
+
+### Why FastAPI
+
+FastAPI fits this workload well, and it does help in production, though it covers only the API layer of the list above:
+
+- **Async by design.** A RAG request mostly waits on network calls (embeddings, LLM). On an ASGI server one process serves many such requests concurrently, and streaming the answer over SSE is a plain `StreamingResponse`. Blocking calls such as Chroma's are moved to a thread pool.
+- **Typed contracts.** Pydantic models validate every request and response (e.g. `top_k` between 1 and 20, `date_from` not after `date_to`), and the same models generate the OpenAPI docs at `/docs`.
+- **Dependency injection.** Authentication, rate limiting, and per-request clients plug in as dependencies without touching endpoint code.
+- **ASGI ecosystem.** Other ASGI apps mount into the same server, as Chainlit does at `/ui`, and standard middleware (CORS, OpenTelemetry, Prometheus) works out of the box.
