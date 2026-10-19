@@ -316,8 +316,9 @@ with left:
     st.text_area("Reference answer", key=f"answer_{cid}", height=110)
     st.text_area("Key facts (one per line)", key=f"facts_{cid}", height=90,
                  help="What a correct answer must add beyond the question. Not repeated from the question, "
-                      "as short as possible, verbatim from the article, essential. ✓/✗ below checks the "
-                      "first three automatically.")
+                      "as short as possible, verbatim from the article, essential. Key facts are the minimal "
+                      "core without which the answer is wrong or incomplete. ✓/✗ below checks 'not repeated' "
+                      "and 'verbatim' automatically; the rest is your judgment.")
 
     expected_ids = [d for d in lines(state[f"expected_{cid}"]) if d in articles()]
     for fact in lines(state[f"facts_{cid}"]):
