@@ -1,7 +1,8 @@
 """Score retrieval against the golden dataset.
 
 Usage:
-    python -m evals.evaluate [--golden evals/golden.jsonl] [--top-k N] [--no-auto-filters] [--reviewed-only]
+    python -m evals.evaluate [--golden evals/golden.jsonl] [--top-k N] [--no-auto-filters]
+                             [--topic-mode filter|boost|off] [--topic-boost X] [--reviewed-only]
 
 Runs every question through the same retrieval pipeline as /query (filter extraction, filtered
 search, fallback) and checks where the expected articles rank. Prints a summary and the misses,
@@ -52,9 +53,13 @@ def admits(filters: SearchFilters, metadata: dict[str, MetadataValue]) -> bool:
     return True
 
 
-async def evaluate_case(case: dict, top_k: int, auto_filters: bool, metadata: dict) -> dict:
+async def evaluate_case(
+    case: dict, top_k: int, auto_filters: bool, topic_mode: str, topic_boost: float, metadata: dict
+) -> dict:
     expected = {doc_id for doc_id in case["expected_doc_ids"] if doc_id in metadata}
-    applied, chunks = await retrieval.retrieve(case["question"], top_k, SearchFilters(), auto_filters)
+    applied, boosted, chunks = await retrieval.retrieve(
+        case["question"], top_k, SearchFilters(), auto_filters, topic_mode, topic_boost
+    )
     rank = doc_rank(chunks, expected)
     return {
         "id": case["id"],
@@ -64,6 +69,7 @@ async def evaluate_case(case: dict, top_k: int, auto_filters: bool, metadata: di
         "rank": rank,
         "filtered_out": not any(admits(applied, metadata[doc_id]) for doc_id in expected),
         "applied_filters": applied.model_dump(mode="json", exclude_none=True),
+        "boosted_topic": boosted,
         "retrieved": [
             {"document_id": c.metadata.get("document_id"), "title": c.metadata.get("title"), "distance": c.distance}
             for c in chunks
@@ -105,7 +111,8 @@ def print_report(summary: dict, by_style: dict[str, dict], results: list[dict], 
         rank = f"rank {r['rank']}" if r["rank"] else "not retrieved"
         reason = ", filtered out" if r["filtered_out"] else ""
         print(f"\n  {r['id']} [{rank}{reason}] {r['question']}")
-        print(f"    expected: {', '.join(r['expected_doc_ids'])}   filters: {r['applied_filters'] or 'none'}")
+        boost = f"   boosted: {r['boosted_topic']}" if r["boosted_topic"] else ""
+        print(f"    expected: {', '.join(r['expected_doc_ids'])}   filters: {r['applied_filters'] or 'none'}{boost}")
         for hit in r["retrieved"]:
             print(f"    - {hit['document_id']}: {hit['title']}")
 
@@ -116,6 +123,11 @@ async def main() -> None:
     parser.add_argument("--golden", type=Path, default=DEFAULT_OUT, help="golden dataset (JSONL)")
     parser.add_argument("--top-k", type=int, default=settings.top_k, help="chunks retrieved per question")
     parser.add_argument("--no-auto-filters", action="store_true", help="search without filter extraction")
+    parser.add_argument(
+        "--topic-mode", choices=["filter", "boost", "off"], default=settings.topic_mode,
+        help="how an extracted topic is used",
+    )
+    parser.add_argument("--topic-boost", type=float, default=settings.topic_boost, help="distance bonus with boost")
     parser.add_argument("--reviewed-only", action="store_true", help="skip cases not marked as reviewed")
     args = parser.parse_args()
     auto_filters = not args.no_auto_filters
@@ -131,7 +143,7 @@ async def main() -> None:
 
     async def limited(case):
         async with semaphore:
-            return await evaluate_case(case, args.top_k, auto_filters, metadata)
+            return await evaluate_case(case, args.top_k, auto_filters, args.topic_mode, args.topic_boost, metadata)
 
     results = await asyncio.gather(*(limited(c) for c in scorable))
     summary = summarize(results)
@@ -144,6 +156,8 @@ async def main() -> None:
         f"{len(cases)} cases ({sum(bool(c.get('reviewed')) for c in cases)} reviewed), "
         f"{len(cases) - len(scorable)} skipped (articles not indexed). "
         f"top_k={args.top_k}, auto_filters={auto_filters}"
+        + (f", topic_mode={args.topic_mode}" if auto_filters else "")
+        + (f", topic_boost={args.topic_boost}" if auto_filters and args.topic_mode == "boost" else "")
     )
     print_report(summary, by_style, results, args.top_k)
 
@@ -154,6 +168,8 @@ async def main() -> None:
             "golden": str(args.golden),
             "top_k": args.top_k,
             "auto_filters": auto_filters,
+            "topic_mode": args.topic_mode,
+            "topic_boost": args.topic_boost,
             "reviewed_only": args.reviewed_only,
             "filter_model": settings.filter_model,
             "embedding_model": settings.embedding_model,

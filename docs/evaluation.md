@@ -44,7 +44,7 @@ So far the evaluation scores **retrieval**: does the search find the article tha
 | `question` | What a user would type |
 | `expected_doc_ids` | Articles that answer the question. Retrieval is scored against these |
 | `reference_answer`, `key_facts` | A correct answer and the facts it must contain. Not used yet; for answer scoring later |
-| `style` | Describes the question, not the article: `dated` if it mentions a date or period ('on March 24', 'in Jan/Feb 1987'), `undated` if it mentions none |
+| `style` | Describes the question, not the article: `dated` if it mentions a date or period ('on March 24', 'in Jan/Feb 1987', 'third-quarter'), `undated` if it mentions none. Checked automatically |
 | `source_title`, `source_date` | The article the question was generated from, to make review easier |
 | `reviewed` | Whether a person has checked the case |
 | `notes` | Optional. What the review decided and why, e.g. 'Added reuters-3065: same story, same day' |
@@ -75,7 +75,7 @@ The trick is that **the article the question was written from is the expected an
 | As short as possible | 'most of Lazere's loan portfolio' | 'loan portfolio' | A correct answer may word the rest differently ('most of its loan portfolio') |
 | Essential | the group total '96,000 tonnes' for a question about Malaysia's and Indonesia's quotas | (left out) | A good answer that leaves it out would be counted as wrong |
 
-**Shape versus content.** The reply's *shape* (a question, a reference answer, a list of key facts) is enforced by OpenAI's structured outputs, from the Pydantic model `GeneratedCase`. The *content* rules need the article, which a JSON schema cannot express, so a Pydantic validator checks them after parsing, with the article passed as validation context. The rules 'verbatim' and 'never repeats the question' are checked by [evals/checks.py](../evals/checks.py); if a reply breaks one, the generator sends the error back to the LLM ('key fact "Aldo Hofmeister" only repeats the question') and asks again, up to three attempts, and skips the article if it still fails. Whether a fact is as short as possible and essential cannot be checked automatically; that stays with the prompt and the review. The same check marks key facts ✓ or ✗ in the review UI.
+**Shape versus content.** The reply's *shape* (a question, a reference answer, a list of key facts) is enforced by OpenAI's structured outputs, from the Pydantic model `GeneratedCase`. The *content* rules need the article, which a JSON schema cannot express, so a Pydantic validator checks them after parsing, with the article passed as validation context. The rules 'verbatim' and 'never repeats the question' are checked by [evals/checks.py](../evals/checks.py); if a reply breaks one, the generator sends the error back to the LLM ('key fact "Aldo Hofmeister" only repeats the question') and asks again, up to three attempts, and skips the article if it still fails. Whether a fact is as short as possible and essential cannot be checked automatically; that stays with the prompt and the review. The same check marks key facts ✓ or ✗ in the review UI. The question's style is validated the same way: an `undated` question that names a month, year, quarter or similar period is sent back, and so is a `dated` one that names none.
 
 The 'repeats the question' check rejects a fact only if *all* its words are in the question (ignoring function words and company suffixes such as 'Corp'), so '30.50 dlrs per share' passes for a question about the price per share: '30.50' is new.
 
@@ -100,7 +100,7 @@ For each case with `"reviewed": false`:
 - **Add equally good articles to `expected_doc_ids`.** Reuters often has several versions of one story, such as a short highlights item and a detailed table. If the second one is retrieved, that is not a miss. See [deciding on another article](#deciding-on-another-article) below.
 - **Check the reference answer** against the article: correct, complete, only facts from the article.
 - **Check the key facts** against the four rules above. The UI marks each one ✓ or ✗ for 'verbatim' and 'never repeats the question'; whether it is as short as possible and essential is your call. Remove facts a good answer could leave out.
-- **Check the style:** an `undated` question must not mention a date or period such as 'Jan/Feb'.
+- **Check the style:** an `undated` question must not mention a date or period such as 'Jan/Feb'. This is checked automatically; if you rewrite a question, fix the style to match.
 - **Never change a case to make a system failure go away.** If the right article was excluded by a wrong filter, the case is correct and the system is not.
 - Set `"reviewed": true`, and write what you decided in `notes` if you changed anything.
 
@@ -189,6 +189,8 @@ question ─► wrong filter ─► right article removed ─► 4 other article
 - **Dates are low risk.** The question states them, so the LLM mostly copies them.
 - **Topics are high risk.** Topic codes were assigned by Reuters editors in 1987, from a fixed list of 119. The LLM has to guess which code an editor chose, and that guess is subjective.
 
+The evaluation confirmed this, so the extracted topic is no longer applied by default (`topic_mode` = `off`, see [the findings](#2026-10-19-topic-as-filter-boost-or-not-at-all)). The topic is still extracted, and `topic_mode` = `filter` restores the behaviour described above.
+
 ## 5. Running the evaluation
 
 [evals/evaluate.py](../evals/evaluate.py) runs each question through the same retrieval pipeline as `/query` ([app/services/retrieval.py](../app/services/retrieval.py)), so the scores describe the real system and not a copy of it.
@@ -198,6 +200,7 @@ question ─► wrong filter ─► right article removed ─► 4 other article
 .venv/bin/python -m evals.evaluate --no-auto-filters  # plain similarity search, for comparison
 .venv/bin/python -m evals.evaluate --reviewed-only    # only reviewed cases
 .venv/bin/python -m evals.evaluate --top-k 8          # retrieve more chunks
+.venv/bin/python -m evals.evaluate --topic-mode boost --topic-boost 0.05  # how an extracted topic is used
 ```
 
 Output: the metrics overall and per `style`, then every case not ranked first with its applied filters and the retrieved titles. The full results and the settings used are written to `evals/runs/` (git-ignored), so two runs can be compared.
@@ -300,6 +303,92 @@ The search itself is deterministic: same question, same embedding, same ranking.
 - Review UI and checklist: the same check, and the four rules in 'How to review'.
 
 Retrieval scores are unaffected: key facts are only used for answer scoring, which comes next.
+
+### 2026-10-19: reviewed baseline
+
+**Setup.** All 50 cases reviewed. `top_k` 4, `text-embedding-3-small`, `gpt-5.4-nano` for filter extraction, full corpus indexed. Filter extraction varies between runs, so the auto-filter configuration was run five times; plain search is deterministic and was run once. This is the reference point for the filter fix.
+
+**Correction: seven questions had the wrong style.** They were marked `undated` but name a date or period: 'for 1987' (q0008, q0035), 'in Jan/Feb 1987' (q0033), 'the April G-7 statement' (q0021), 'fourth-quarter' / 'first quarter' (q0029, q0044), 'the September … housing starts' (q0036). The generator asked for undated questions but never checked the result, and neither did the review UI or `evals.checks`, which covered only the key facts. All seven are now `dated`. The style rule is now checked by [evals/checks.py](../evals/checks.py) in both directions (an undated question names no date or period, a dated one names one), and the generator sends a violation back to the LLM like a key-fact error. This moves cases between the style rows and changes no overall score. It also corrects the first entry: the undated row there contained dated questions, including the filtered-out q0033.
+
+Filter extraction itself ignored most of these periods: only q0021 ('April') and q0033 ('Jan/Feb') got a date filter. That is right, since 'fourth-quarter' or 'for 1987' are not publication dates, but it means the dated row mixes two kinds of question: those with a publication date the filter can use, and those with a period it cannot.
+
+| | n | hit@1 | hit@4 | MRR | filt.out |
+|---|---|---|---|---|---|
+| **With auto filters**, mean of 5 runs (min–max) | 50 | 82% (80–84) | 86% (84–88) | 0.83 (0.82–0.86) | 11% (8–14) |
+| dated | 30 | 89% (87–90) | 92% (90–93) | 0.90 (0.88–0.92) | 5% (3–10) |
+| undated | 20 | 71% (70–75) | 76% (75–80) | 0.73 (0.72–0.77) | 19% (15–20) |
+| **Without auto filters** | 50 | **88%** | **96%** | **0.92** | 0% |
+| dated | 30 | 90% | 97% | 0.93 | 0% |
+| undated | 20 | 85% | 95% | 0.89 | 0% |
+
+Reviewing the remaining 37 cases changed no score: plain search gives the same 88 / 96 / 0.92 as after the review of the misses. Among the 37 cases the system already ranked first, the review changed no question and added a duplicate to only one (q0044). This is what pooling predicts (see 'Start with the misses').
+
+**Which cases the filters excluded**, over the five runs:
+
+| Case | Excluded in | Inferred filter | Article's labels / date |
+|---|---|---|---|
+| q0015 Cehave NV Veghel / EC levy | 5 of 5 | `grain` | `meal-feed` |
+| q0017 Bank of British Columbia payout | 5 of 5 | `acq` | `earn` |
+| q0033 Argentina beef exports Jan/Feb | 5 of 5 | Jan–Feb, `trade` | published Mar 11; `carcass`, `livestock` |
+| q0024 Nippon Mining / Conoco | 4 of 5 | `acq` | `crude` |
+| q0048 Abidjan port cargo | 4 of 5 | `trade` | `ship` |
+| q0014 California Micro / Grumman pact | 2 of 5 | `acq` | `strategic-metal` |
+| q0010 K mart dividend and split | 1 of 5 | `acq` | `earn` |
+| q0027 Saudi Arabia / Petrobras credit | 1 of 5 | `instal-debt` | `crude` |
+
+q0048 and q0010 were already excluded in some of the earlier runs, but the previous entries did not list them.
+
+**Finding 1: the topic filter causes every exclusion except one date.** Of 27 exclusions over five runs, 26 come from a wrong topic alone. The one date failure, q0033, is the known pitfall that filters match the publication date, not the event date. Its topic was wrong too, so dropping the topic alone would not bring it back. A topic was inferred in 79% of all case runs (198 of 250), so the filter is active almost every time.
+
+**Finding 2: the topic filter helps in three cases.** In q0025 (Allis-Chalmers) and q0026 (Dauphin Deposit), the inferred `acq` moved the right article from rank 2 to rank 1 in all five runs. In q0021 (G-7 statement), `trade` brought the article from not retrieved to rank 1, but in only one of five runs.
+
+**The target for a fix.** Plain search sets the bar: hit@4 96%, hit@1 88%. A fix succeeds if it closes the 10-point hit@4 gap without losing the hit@1 gains from Finding 2. Each candidate needs several runs too, because its filter extraction varies as well.
+
+### 2026-10-19: topic as filter, boost, or not at all
+
+**Setup.** As in the reviewed baseline. The extracted topic is now used according to `topic_mode`:
+
+| Mode | What the extracted topic does |
+|---|---|
+| `filter` | Keeps only articles with that label (the behaviour so far) |
+| `off` | Nothing: only the extracted dates filter |
+| `boost` | Search with the dates only, take 5 × `top_k` candidates, subtract `topic_boost` from the distance of chunks with that label, keep the best `top_k` |
+
+A topic set explicitly by the client always filters. `boost` was planned with 0.05, chosen before any run; 0.02 and 0.10 were run to see how sensitive the result is, not to pick the best value. Five runs per configuration.
+
+| | hit@1 | hit@4 | MRR | filt.out |
+|---|---|---|---|---|
+| `filter` (baseline) | 82% (80–84) | 86% (84–88) | 0.83 | 11% |
+| **`off`** | **88%** (88–88) | **94%** (94–94) | **0.91** | 2% |
+| `boost` 0.02 | 90% (90–90) | 94% (94–94) | 0.92 | 2% |
+| `boost` 0.05 | 90% (88–90) | 94% (92–94) | 0.91 | 2% |
+| `boost` 0.10 | 89% (88–90) | 95% (94–96) | 0.92 | 2% |
+| plain search, no extraction | 88% | 96% | 0.92 | 0% |
+
+**Finding 1: no longer filtering by topic closes almost the whole gap.** hit@4 rises from 86% to 94% and hit@1 from 82% to 88%, in every run. All seven cases the topic alone excluded in the baseline are found again. The remaining 2 points to plain search are q0033, whose date filter (Jan–Feb) excludes an article published on March 11: the publication-date pitfall, not the topic.
+
+**Finding 2: `off` is also stable.** All five runs gave the same scores. With `filter`, hit@4 ranged over 4 points, because the extracted topic changed from run to run and each change decided whether an article could be found. The dates vary much less (one exception below).
+
+**Finding 3: the boost wins or loses single cases, depending on distance gaps.** The boost reorders two articles when the gap between their distances is smaller than the boost:
+
+| Case | Boosted topic | Right article vs the one above it | Effect |
+|---|---|---|---|
+| q0025 Allis-Chalmers | `acq` (right) | 0.247 vs 0.232 | rank 2 → 1 with every boost |
+| q0021 G-7 statement | `trade` (right, in 3 of 5 runs) | 0.392 vs 0.318 | not retrieved → rank 1, only with 0.10 |
+| q0015 Cehave levy | `grain` (wrong) | 0.265 vs 0.360 | rank 1 → 2, only with 0.10 |
+
+A small boost gains one case (q0025, 2 points of hit@1). A large one gains q0021 but loses q0015, because a wrong topic is boosted just as strongly as a right one. On 50 cases, all three boost values are within one or two cases of `off`, which is within what one case flipping can do.
+
+**Corrections to the baseline entry.** q0026 (Dauphin Deposit) was counted as a case the topic filter helps. With `off` it is ranked first in all five runs, so the date filter (April 13) does that, not the topic. And in one `boost` 0.05 run, q0029 was not found because extraction turned 'fourth-quarter' into a date filter for October 1–20; that is date extraction varying, not the boost.
+
+**Decision.** `topic_mode` now defaults to `off`. It removes the loss, is stable across runs, and needs no parameter. The boost's gain rests on one case with a 0.015 distance gap, and its value would be tuned on the cases we report.
+
+**Why keep the boost.** A filter treats the topic as a hard rule: a wrong guess makes the right article impossible to find. The boost treats it as a second signal added to the distance, so a wrong guess costs the right article only the size of the boost. The top `top_k` is a fixed number of slots, so whatever moves up pushes something else down. That pays off only if the topic is right more often than the distance ranking is wrong in close calls. Here it is not: the extracted topic is often wrong and changes between runs, and the embeddings already rank the right article first in almost every case. The boost could become useful:
+
+- with a **more reliable topic**: a better extraction model, or a topic the user picks from a list;
+- with **vaguer questions**, where many articles lie close together and a hint decides more often. Generated questions name the company and the figure, which flatters similarity search; real questions from the UI will be harder.
+
+It stays available (`--topic-mode boost`) to retest when either changes.
 
 ## 7. Pitfalls
 

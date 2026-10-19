@@ -62,7 +62,8 @@ async def query_rag(payload: QueryInput) -> StreamingResponse:
     """
     top_k = payload.top_k or get_settings().top_k
     explicit = SearchFilters(**payload.model_dump(include=set(SearchFilters.model_fields)))
-    applied, chunks = await retrieval.retrieve(payload.question, top_k, explicit, payload.auto_filters)
+    # The boosted topic is not shown yet; only topic_mode "boost" sets one, and the default is "off".
+    applied, _boosted, chunks = await retrieval.retrieve(payload.question, top_k, explicit, payload.auto_filters)
 
     return StreamingResponse(
         llm.stream_answer(payload.question, chunks, applied),

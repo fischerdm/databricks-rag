@@ -75,7 +75,7 @@ A golden dataset is a fixed, reviewed set of questions with known right answers 
 | `MRR` | Mean of 1/rank of the expected article; 0 if not retrieved |
 | `filt.out` | Share of questions where the inferred filters excluded the expected article before the search |
 
-**Findings so far:** the inferred topic filter hurts retrieval (hit@4 82–86% with filter extraction, 96% without), because a wrong topic removes the right article and the fallback only runs on zero results. Filter extraction also varies between identical runs. Details in [docs/evaluation.md](docs/evaluation.md#6-findings).
+**Findings so far:** filtering by the inferred topic hurt retrieval (hit@4 86% on average over five runs), because a wrong topic removes the right article and the fallback only runs on zero results. Using only the inferred dates gives 94%, stable across runs, so the topic is no longer applied by default (`TOPIC_MODE=off`). A topic boost instead of a filter showed no reliable gain. Details in [docs/evaluation.md](docs/evaluation.md#6-findings).
 
 ## Endpoints
 

@@ -1,6 +1,9 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+TopicMode = Literal["filter", "boost", "off"]
 
 
 class Settings(BaseSettings):
@@ -15,6 +18,14 @@ class Settings(BaseSettings):
     # Extracts date/topic filters from questions. gpt-4o-mini mapped "OPEC" to "oilseed"
     # in testing; the gpt-5.4 family got it right and nano was the fastest.
     filter_model: str = "gpt-5.4-nano"
+    # How an extracted topic is used: "filter" keeps only articles with that label, "boost" ranks
+    # them higher without excluding the rest, "off" ignores it. A topic set by the client always filters.
+    # "off" since the evaluation showed the extracted topic is too often wrong to filter by.
+    topic_mode: TopicMode = "off"
+    # With "boost": subtracted from the cosine distance of chunks labelled with the extracted topic,
+    # so the topic becomes a second ranking signal instead of a hard filter. It reorders, never adds:
+    # only worth it with a reliable topic. See docs/evaluation.md, 'topic as filter, boost, or not at all'.
+    topic_boost: float = 0.05
 
     chroma_path: str = "data/chroma"
     collection_name: str = "documents"
