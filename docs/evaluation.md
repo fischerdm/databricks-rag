@@ -47,6 +47,7 @@ So far the evaluation scores **retrieval**: does the search find the article tha
 | `style` | `dated` if the question mentions when the news was reported, `undated` if it mentions no date |
 | `source_title`, `source_date` | The article the question was generated from, to make review easier |
 | `reviewed` | Whether a person has checked the case |
+| `notes` | Optional. What the review decided and why, e.g. 'Added reuters-3065: same story, same day' |
 
 ### Step 1: draft cases
 
@@ -71,7 +72,10 @@ Generated cases are drafts. Review is what makes the dataset *golden*. For each 
 - **Delete or rewrite vague questions** that many articles answer equally well.
 - **Add equally good articles to `expected_doc_ids`.** Reuters often has several versions of one story, such as a short highlights item and a detailed table. If the second one is retrieved, that is not a miss.
 - **Check the reference answer** against the article.
-- Set `"reviewed": true`.
+- **Never change a case to make a system failure go away.** If the right article was excluded by a wrong filter, the case is correct and the system is not.
+- Set `"reviewed": true`, and write what you decided in `notes` if you changed anything.
+
+**Start with the misses.** A case the system already ranks first rarely hides a problem with `expected_doc_ids`. For a miss, the articles retrieved instead are the candidates for equally good answers, so you only judge those few, never the whole corpus. Search benchmarks have been built this way for decades ('pooling'). An equally good article that no run ever retrieves stays unknown; it does not distort the scores, and it shows up for review once a better version of the system retrieves it.
 
 ## 3. Metrics
 
@@ -180,9 +184,54 @@ Take the Nippon Mining case. The LLM read 'joint venture … sign with' and chos
 - Use the topic to boost matching articles in the ranking instead of excluding the others.
 - Fall back to an unfiltered search not only on zero results but also when the filtered results are poor matches.
 
+### 2026-10-19: review of the misses, and filter extraction is not deterministic
+
+**Setup.** The 13 cases not ranked first in the baseline were reviewed (now `reviewed: true`, with `notes`); the other 37 are not yet. Same settings as the baseline. The auto-filter evaluation was run three times, plain search once.
+
+**Review.** Only one of the 13 questions needed rewriting. The misses fell into four groups:
+
+| Group | Cases | Fix |
+|---|---|---|
+| **Filter excluded the article.** Plain search ranks it first | q0014, q0015, q0017, q0024, q0033 | None. The case is right and the system is wrong; these are the tests for a filter fix |
+| **Same story twice.** Reuters ran an update or repeat, and the system found the other copy | q0008, q0027, q0028, q0040 | Added the copies to `expected_doc_ids` |
+| **Genuine ranking miss** | q0004, q0012, q0039 | None |
+| **Question too vague**, answered by dozens of articles | q0021 | Rewritten, plus a duplicate added. Still a genuine miss: the answer is in the second chunk of a long G-7 statement, and analysis articles about the statement rank higher |
+
+The review also caught a broken reference answer (q0028, cut off mid-sentence).
+
+**Results after the review:**
+
+| | hit@1 | hit@4 | MRR | filt.out |
+|---|---|---|---|---|
+| With auto filters, run 1 | 82% | 86% | 0.84 | 10% |
+| With auto filters, run 2 | 80% | 84% | 0.82 | 12% |
+| With auto filters, run 3 | 78% | 82% | 0.80 | 14% |
+| **Without auto filters** | **88%** | **96%** | **0.92** | 0% |
+
+**Finding 1: the gap is now entirely the filter.** Fixing the duplicates raised both configurations, and the remaining genuine misses (q0004, q0012, q0021, q0039) occur with and without filters. What separates the two is the cases where filters excluded the right article: hit@4 is 96% without filter extraction and 82–86% with it.
+
+**Finding 2: filter extraction gives different results on identical runs.** Nothing changed between the three runs, yet:
+
+| Case | Inferred topic in runs 1 / 2 / 3 | Article's labels |
+|---|---|---|
+| q0014 California Micro / Grumman pact | none / `acq` / none | `strategic-metal` |
+| q0024 Nippon Mining / Conoco | none / none / `acq` | `crude` |
+| q0027 Saudi Arabia / Petrobras credit | `instal-debt` in all three (none in the baseline) | `crude` |
+
+The search itself is deterministic: same question, same embedding, same ranking. The variation comes from the extraction LLM. Consequences:
+
+- A difference of a few points between two single runs can be noise. Compare configurations over several runs.
+- A user asking the same question twice can get different sources.
+- q0027 shows the failure mode again: the model matched 'credit guarantees' to `instal-debt` (Instalment Debt/Consumer Credit) on shared words, against the prompt's instruction to match on meaning.
+
+**Finding 3: the topic filter also helps, but less often than it hurts.** In q0025 (Allis-Chalmers restructuring) and q0026 (Dauphin Deposit acquisition), the inferred `acq` filter moved the right article from rank 2 to rank 1, in all three runs. Against that, 5–7 cases per run lose the right article entirely. Any fix should keep the benefit if it can, e.g. by using the topic to boost matching articles rather than to exclude the others.
+
+**Next.** Review the remaining 37 cases, then compare the filter options from the baseline entry over several runs each.
+
 ## 7. Pitfalls
 
 - **Don't tune on the cases you report.** If you change prompts until every case passes, the scores stop telling you anything. Keep some cases aside and look at them only for the final comparison.
+- **LLM steps vary between runs.** Filter extraction can give different filters for the same question on two runs, so scores move by a few points without any change. Run the evaluation several times before concluding that a change helped.
 - **A miss can be a wrong case.** Check the retrieved titles before blaming the system: often a second article answers the question just as well and belongs in `expected_doc_ids`.
 - **Dated questions use the publication date.** Filters match the date an article was published. A user asking about 'the week ending March 19' gets a filter that excludes the article published on April 1 that reports it. The generator avoids such questions; real users won't, so add a few by hand.
 - **A generated question is easier than a real one.** It was written from the article, often with the article's own words, which flatters similarity search. Add real questions from the UI over time, especially the ones that failed.

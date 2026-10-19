@@ -73,7 +73,7 @@ A golden dataset is a fixed, reviewed set of questions with known right answers 
 | `MRR` | Mean of 1/rank of the expected article; 0 if not retrieved |
 | `filt.out` | Share of questions where the inferred filters excluded the expected article before the search |
 
-**First finding:** the inferred topic filter hurts retrieval (hit@4 86% with filter extraction, 96% without), because a wrong topic removes the right article and the fallback only runs on zero results. Details in [docs/evaluation.md](docs/evaluation.md#6-findings).
+**Findings so far:** the inferred topic filter hurts retrieval (hit@4 82–86% with filter extraction, 96% without), because a wrong topic removes the right article and the fallback only runs on zero results. Filter extraction also varies between identical runs. Details in [docs/evaluation.md](docs/evaluation.md#6-findings).
 
 ## Endpoints
 
