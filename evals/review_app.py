@@ -14,6 +14,7 @@ import json
 import os
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
@@ -77,6 +78,18 @@ def across_runs(results: list[dict]) -> str:
     if missed := sum(r["rank"] is None and not r["filtered_out"] for r in results):
         parts.append(f"not retrieved in {missed}")
     return "; ".join(parts)
+
+
+def run_label(run_name: str, result: dict) -> str:
+    """'2026-10-19 14:18:42 · ⚠️ filtered out (acq)' for a run file name and one case's result in it."""
+    stamp = datetime.strptime(run_name[:15], "%Y%m%d-%H%M%S").strftime("%Y-%m-%d %H:%M:%S")
+    if result["rank"] == 1:
+        outcome = "✅ rank 1"
+    elif result["filtered_out"]:
+        outcome = f"⚠️ filtered out ({result['applied_filters'].get('topic') or 'dates'})"
+    else:
+        outcome = f"⚠️ rank {result['rank']}" if result["rank"] else "⚠️ not retrieved"
+    return f"{stamp} · {outcome}"
 
 
 def filter_check(applied: dict, metadata: dict) -> str:
@@ -273,16 +286,22 @@ expected_now = set(lines(state[f"expected_{cid}"]))
 for column, (label, label_runs) in zip(run_columns, runs.items()):
     with column:
         st.markdown(f"**{label}**")
-        results = [run[cid] for _, run in label_runs if cid in run]
-        if not results:
+        case_runs = [(name, run[cid]) for name, run in label_runs if cid in run]
+        if not case_runs:
             st.caption("Not in any run.")
             continue
-        st.markdown(f"All runs: {across_runs(results)}")
+        st.markdown(f"All runs: {across_runs([result for _, result in case_runs])}")
 
-        result = results[0]
-        rank = f"rank {result['rank']}" if result["rank"] else "not retrieved"
-        reason = " · filtered out by the applied filters" if result["filtered_out"] else ""
-        st.markdown(f"Latest run: {'✅' if result['rank'] == 1 else '⚠️'} {rank}{reason}")
+        labels_by_index = [run_label(name, result) for name, result in case_runs]
+        selected = st.selectbox("Run (newest first)", range(len(case_runs)), format_func=labels_by_index.__getitem__,
+                                key=f"run_{label}_{cid}")
+        result = case_runs[selected][1]
+        if result["question"] != state[f"question_{cid}"].strip():
+            st.warning(f"This run used an earlier version of the question: {result['question']}")
+        if set(result["expected_doc_ids"]) != expected_now:
+            st.caption(f"Ranked against the expected articles at the time: {', '.join(result['expected_doc_ids'])}")
+        if result["filtered_out"]:
+            st.caption("Filtered out: the applied filters excluded every expected article.")
         if result["applied_filters"]:
             for doc_id in result["expected_doc_ids"]:
                 if doc_id in articles():
