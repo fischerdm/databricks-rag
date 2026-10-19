@@ -260,6 +260,10 @@ with st.sidebar:
     n_reviewed = sum(bool(c.get("reviewed")) for c in cases)
     st.progress(n_reviewed / len(cases) if cases else 0.0, text=f"{n_reviewed} of {len(cases)} reviewed")
     view = st.radio("Show", ["Unreviewed", "Misses in latest runs", "All"])
+    if view == "Unreviewed" and n_reviewed == len(cases):
+        # Nothing left to review: show everything rather than an empty page.
+        st.success("All cases are reviewed. Showing all.")
+        view = "All"
     shown = [
         c for c in cases
         if view == "All"
@@ -267,7 +271,7 @@ with st.sidebar:
         or (view == "Misses in latest runs" and is_miss(c["id"]))
     ]
     if not shown:
-        st.info("Nothing to show.")
+        st.info("Nothing to show in this view. Choose 'All' to see every case.")
         st.stop()
     ids = [c["id"] for c in shown]
     if state.get("case_id") not in ids:
