@@ -102,6 +102,26 @@ def document_metadata(document_ids: list[str]) -> dict[str, dict[str, MetadataVa
     return {m["document_id"]: m for m in result["metadatas"]}
 
 
+def document_distances(query: str, document_ids: list[str]) -> dict[str, float]:
+    """Cosine distance from the query to the closest chunk of each document, as search ranks them.
+
+    Unlike search, this ignores filters and top_k, so it also works for documents search did not return.
+    """
+    if not document_ids:
+        return {}
+    query_vec = embed([query])[0]
+    query_norm = sum(x * x for x in query_vec) ** 0.5
+    result = _collection().get(
+        where={"document_id": {"$in": document_ids}}, include=["embeddings", "metadatas"]
+    )
+    distances: dict[str, float] = {}
+    for vec, metadata in zip(result["embeddings"], result["metadatas"]):
+        similarity = sum(a * b for a, b in zip(query_vec, vec)) / (query_norm * sum(x * x for x in vec) ** 0.5)
+        doc_id = metadata["document_id"]
+        distances[doc_id] = min(distances.get(doc_id, 2.0), float(1 - similarity))
+    return distances
+
+
 def build_filter(filters: SearchFilters) -> dict | None:
     """Translate search filters into a Chroma `where` clause."""
     conditions = []

@@ -45,7 +45,9 @@ Don't add it if:
 - it answers only part of the question
 - it gives different figures, or another source's view
 
-The column without auto filters is usually the better candidate list: no wrong filter has removed anything."""
+The column without auto filters is usually the better candidate list: no wrong filter has removed anything.
+
+**Distance** is the cosine distance between the question and the article's closest chunk: lower is closer, and search returns the lowest. Compare distances within one question, not across questions. Two copies of one story usually have almost the same distance."""
 
 st.set_page_config(page_title="Golden dataset review", layout="wide")
 
@@ -54,6 +56,14 @@ st.set_page_config(page_title="Golden dataset review", layout="wide")
 def articles() -> dict[str, tuple[str, dict]]:
     download_archive()
     return {doc_id: (content, metadata) for doc_id, content, metadata in iter_articles()}
+
+
+@st.cache_data(show_spinner=False)
+def expected_distances(question: str, document_ids: tuple[str, ...]) -> dict[str, float]:
+    """Live distance from the question to each expected article; one embedding call per question."""
+    from app.services import vector  # imported here: needs OPENAI_API_KEY, only the distances use it
+
+    return vector.document_distances(question, list(document_ids))
 
 
 def load_runs(auto_filters: bool) -> list[tuple[str, dict[str, dict]]]:
@@ -245,8 +255,13 @@ left, right = st.columns([2, 3], gap="large")
 
 with left:
     st.text_input("Question", key=f"question_{cid}")
-    st.radio("Style", STYLES, key=f"style_{cid}", horizontal=True,
-             help="dated: mentions when the news was reported. undated: mentions no date or period.")
+    st.radio("Question style", STYLES, key=f"style_{cid}", horizontal=True,
+             help="Describes the question, not the article (every article has a date).\n\n"
+                  "**dated**: the question mentions a date or period, such as 'on March 24', "
+                  "'in April' or 'in Jan/Feb 1987'.\n\n"
+                  "**undated**: the question mentions no date or period.\n\n"
+                  "Only a dated question gives filter extraction a date to work with, so scores are "
+                  "reported per style.")
     st.text_area("Reference answer", key=f"answer_{cid}", height=110)
     st.text_area("Key facts (one per line)", key=f"facts_{cid}", height=90)
 
@@ -266,12 +281,19 @@ with left:
 
 with right:
     facts = lines(state[f"facts_{cid}"])
+    known = tuple(d for d in lines(state[f"expected_{cid}"]) if d in articles())
+    try:
+        distances = expected_distances(state[f"question_{cid}"].strip(), known)
+    except Exception as exc:  # the review works without distances, e.g. offline
+        distances = {}
+        st.caption(f"Distances unavailable: {exc}")
     for i, doc_id in enumerate(lines(state[f"expected_{cid}"])):
         if doc_id not in articles():
             st.warning(f"Unknown article id: {doc_id}")
             continue
         content, metadata = articles()[doc_id]
-        header = f"Expected: {doc_id} · {metadata.get('date', '?')} · {', '.join(metadata.get('topics', [])) or 'no topics'}"
+        distance = f" · distance {distances[doc_id]:.3f}" if doc_id in distances else ""
+        header = f"Expected: {doc_id} · {metadata.get('date', '?')} · {', '.join(metadata.get('topics', [])) or 'no topics'}{distance}"
         with st.expander(header, expanded=i == 0):
             st.markdown(highlight(content, facts), unsafe_allow_html=True)
 
@@ -306,13 +328,17 @@ for column, (label, label_runs) in zip(run_columns, runs.items()):
             for doc_id in result["expected_doc_ids"]:
                 if doc_id in articles():
                     st.caption(f"Filters vs {doc_id}: {filter_check(result['applied_filters'], articles()[doc_id][1])}")
-        for doc_id in dict.fromkeys(hit["document_id"] for hit in result["retrieved"]):
+        # Closest chunk per article, in rank order (several chunks of one article count once).
+        retrieved: dict[str, float] = {}
+        for hit in result["retrieved"]:
+            retrieved.setdefault(hit["document_id"], hit["distance"])
+        for doc_id, distance in retrieved.items():
             if doc_id not in articles():
                 continue
             content, metadata = articles()[doc_id]
             mark = "✓ expected · " if doc_id in expected_now else ""
             topics = ", ".join(metadata.get("topics", [])) or "no topics"
-            with st.expander(f"{mark}{doc_id} · {metadata.get('date', '?')} · {topics} · {metadata['title']}"):
+            with st.expander(f"{mark}{doc_id} · {metadata.get('date', '?')} · {topics} · distance {distance:.3f} · {metadata['title']}"):
                 st.markdown(highlight(content, facts), unsafe_allow_html=True)
                 if doc_id not in expected_now:
                     st.button("Add to expected", key=f"add_{label}_{cid}_{doc_id}",

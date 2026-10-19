@@ -44,7 +44,7 @@ So far the evaluation scores **retrieval**: does the search find the article tha
 | `question` | What a user would type |
 | `expected_doc_ids` | Articles that answer the question. Retrieval is scored against these |
 | `reference_answer`, `key_facts` | A correct answer and the facts it must contain. Not used yet; for answer scoring later |
-| `style` | `dated` if the question mentions when the news was reported, `undated` if it mentions no date |
+| `style` | Describes the question, not the article: `dated` if it mentions a date or period ('on March 24', 'in Jan/Feb 1987'), `undated` if it mentions none |
 | `source_title`, `source_date` | The article the question was generated from, to make review easier |
 | `reviewed` | Whether a person has checked the case |
 | `notes` | Optional. What the review decided and why, e.g. 'Added reuters-3065: same story, same day' |
