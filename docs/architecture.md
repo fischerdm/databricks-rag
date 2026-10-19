@@ -90,7 +90,9 @@ evals/
 ├── checks.py          Rules for key facts and question style, shared by generator and review UI; checks the dataset
 ├── duplicates.py      Suggests other versions of an expected article
 ├── evaluate.py        Scores retrieval against the golden dataset
-├── review_app.py      Streamlit UI for reviewing the cases
+├── score_answers.py   Scores answers with MLflow: traces each query, runs the scorers
+├── scorers.py         Answer scorers: verbatim key facts, per-fact Claude judge, groundedness
+├── review_app.py      Streamlit UI for reviewing the cases and the scored answers
 └── golden.jsonl       The golden dataset
 ```
 
