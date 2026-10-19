@@ -30,9 +30,7 @@ def _sse(event: str, data: object) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
-async def stream_answer(
-    question: str, chunks: list[RetrievedChunk], filters: SearchFilters
-) -> AsyncIterator[str]:
+async def stream_answer(question: str, chunks: list[RetrievedChunk], filters: SearchFilters) -> AsyncIterator[str]:
     """Yield Server-Sent Events: 'filters' and 'sources' once, many 'token' events, then 'done'."""
     yield _sse("filters", filters.model_dump(mode="json"))
     yield _sse("sources", [chunk.model_dump() for chunk in chunks])

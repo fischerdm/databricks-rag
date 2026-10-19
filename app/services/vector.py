@@ -111,9 +111,7 @@ def document_distances(query: str, document_ids: list[str]) -> dict[str, float]:
         return {}
     query_vec = embed([query])[0]
     query_norm = sum(x * x for x in query_vec) ** 0.5
-    result = _collection().get(
-        where={"document_id": {"$in": document_ids}}, include=["embeddings", "metadatas"]
-    )
+    result = _collection().get(where={"document_id": {"$in": document_ids}}, include=["embeddings", "metadatas"])
     distances: dict[str, float] = {}
     for vec, metadata in zip(result["embeddings"], result["metadatas"], strict=True):
         dot = sum(a * b for a, b in zip(query_vec, vec, strict=True))
@@ -132,9 +130,7 @@ def similar_documents(document_id: str, max_distance: float, limit: int = 10) ->
     own = _collection().get(ids=[f"{document_id}:0"], include=["embeddings"])
     if not len(own["ids"]):
         return {}
-    result = _collection().query(
-        query_embeddings=[own["embeddings"][0]], n_results=limit + 1, where={"chunk": 0}
-    )
+    result = _collection().query(query_embeddings=[own["embeddings"][0]], n_results=limit + 1, where={"chunk": 0})
     return {
         metadata["document_id"]: distance
         for metadata, distance in zip(result["metadatas"][0], result["distances"][0], strict=True)

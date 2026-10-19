@@ -23,6 +23,8 @@ from pathlib import Path
 
 # Words that carry no answer on their own: function words, question words and company suffixes,
 # so that "Volkswagen AG" counts as repeating a question that names "Volkswagen".
+# Not formatted: the formatter would put each word on its own line.
+# fmt: off
 STOPWORDS = {
     "a", "an", "and", "are", "as", "at", "be", "by", "did", "do", "does", "for", "from", "has",
     "have", "how", "in", "into", "is", "it", "its", "much", "many", "of", "on", "or", "over",
@@ -30,6 +32,7 @@ STOPWORDS = {
     "who", "why", "will", "with",
     "ag", "co", "corp", "corporation", "inc", "ltd", "nv", "plc", "sa", "group", "company",
 }
+# fmt: on
 
 # A date or period in a question: a month or weekday ('on April 7', 'Jan/Feb'), a year, or a
 # relative period ('third-quarter', 'the 53 weeks to'). Month names are matched capitalised only,

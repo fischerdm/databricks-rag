@@ -241,8 +241,10 @@ def duplicate_candidates(expected: tuple[str, ...], facts: tuple[str, ...]) -> l
 def duplicate_expander(cid: str, candidate: dict, facts: list[str], nested: bool = False) -> None:
     doc_id = candidate["document_id"]
     content, metadata = articles()[doc_id]
-    header = (f"{doc_id} · {metadata.get('date', '?')} · distance {candidate['distance']:.3f} to "
-              f"{candidate['similar_to']} · {facts_label(facts, content)} · {metadata['title']}")
+    header = (
+        f"{doc_id} · {metadata.get('date', '?')} · distance {candidate['distance']:.3f} to "
+        f"{candidate['similar_to']} · {facts_label(facts, content)} · {metadata['title']}"
+    )
     # Streamlit does not allow expanders inside expanders; nested candidates use a plain block.
     container = st.container(border=True) if nested else st.expander(header)
     with container:
@@ -250,10 +252,18 @@ def duplicate_expander(cid: str, candidate: dict, facts: list[str], nested: bool
             st.markdown(f"**{header}**")
         st.markdown(highlight(content, facts), unsafe_allow_html=True)
         missing = candidate["missing"]
-        st.button("Add to expected", key=f"dup_{cid}_{doc_id}", on_click=add_expected, args=(cid, doc_id),
-                  help=f"Lacks key facts {missing}: adding it will be flagged until the facts or the "
-                       "expected articles are adjusted." if missing else
-                       "Only if a user would be fully satisfied with this article alone. Click Save afterwards.")
+        st.button(
+            "Add to expected",
+            key=f"dup_{cid}_{doc_id}",
+            on_click=add_expected,
+            args=(cid, doc_id),
+            help=(
+                f"Lacks key facts {missing}: adding it will be flagged until the facts or the "
+                "expected articles are adjusted."
+                if missing
+                else "Only if a user would be fully satisfied with this article alone. Click Save afterwards."
+            ),
+        )
 
 
 # --- layout --------------------------------------------------------------------------------
@@ -277,7 +287,8 @@ with st.sidebar:
         st.success("All cases are reviewed. Showing all.")
         view = "All"
     shown = [
-        c for c in cases
+        c
+        for c in cases
         if view == "All"
         or (view == "Unreviewed" and not c.get("reviewed"))
         or (view == "Misses in latest runs" and is_miss(c["id"]))
@@ -325,19 +336,28 @@ left, right = st.columns([2, 3], gap="large")
 
 with left:
     st.text_input("Question", key=f"question_{cid}")
-    st.radio("Question style", STYLES, key=f"style_{cid}", horizontal=True,
-             help="Describes the question, not the article (every article has a date).\n\n"
-                  "**dated**: the question mentions a date or period, such as 'on March 24', "
-                  "'in April' or 'in Jan/Feb 1987'.\n\n"
-                  "**undated**: the question mentions no date or period.\n\n"
-                  "Only a dated question gives filter extraction a date to work with, so scores are "
-                  "reported per style.")
+    st.radio(
+        "Question style",
+        STYLES,
+        key=f"style_{cid}",
+        horizontal=True,
+        help="Describes the question, not the article (every article has a date).\n\n"
+        "**dated**: the question mentions a date or period, such as 'on March 24', "
+        "'in April' or 'in Jan/Feb 1987'.\n\n"
+        "**undated**: the question mentions no date or period.\n\n"
+        "Only a dated question gives filter extraction a date to work with, so scores are "
+        "reported per style.",
+    )
     st.text_area("Reference answer", key=f"answer_{cid}", height=110)
-    st.text_area("Key facts (one per line)", key=f"facts_{cid}", height=90,
-                 help="What a correct answer must add beyond the question. Not repeated from the question, "
-                      "as short as possible, verbatim from the article, essential. Key facts are the minimal "
-                      "core without which the answer is wrong or incomplete. ✓/✗ below checks 'not repeated' "
-                      "and 'verbatim' automatically; the rest is your judgment.")
+    st.text_area(
+        "Key facts (one per line)",
+        key=f"facts_{cid}",
+        height=90,
+        help="What a correct answer must add beyond the question. Not repeated from the question, "
+        "as short as possible, verbatim from the article, essential. Key facts are the minimal "
+        "core without which the answer is wrong or incomplete. ✓/✗ below checks 'not repeated' "
+        "and 'verbatim' automatically; the rest is your judgment.",
+    )
 
     expected_ids = [d for d in lines(state[f"expected_{cid}"]) if d in articles()]
     for fact in lines(state[f"facts_{cid}"]):
@@ -345,8 +365,10 @@ with left:
         if content_words(fact) <= content_words(state[f"question_{cid}"]):
             st.caption(f"✗ {fact}: only repeats the question")
         elif lacking:
-            st.caption(f"✗ {fact}: not verbatim in {', '.join(lacking)}. Shorten the fact, "
-                       "or remove the article if it does not give this fact")
+            st.caption(
+                f"✗ {fact}: not verbatim in {', '.join(lacking)}. Shorten the fact, "
+                "or remove the article if it does not give this fact"
+            )
         else:
             st.caption(f"✓ {fact}")
 
@@ -373,8 +395,10 @@ with right:
             continue
         content, metadata = articles()[doc_id]
         distance = f" · distance {distances[doc_id]:.3f}" if doc_id in distances else ""
-        header = (f"Expected: {doc_id} · {metadata.get('date', '?')} · "
-                  f"{', '.join(metadata.get('topics', [])) or 'no topics'}{distance} · {facts_label(facts, content)}")
+        header = (
+            f"Expected: {doc_id} · {metadata.get('date', '?')} · "
+            f"{', '.join(metadata.get('topics', [])) or 'no topics'}{distance} · {facts_label(facts, content)}"
+        )
         with st.expander(header, expanded=i == 0):
             st.markdown(highlight(content, facts), unsafe_allow_html=True)
 
@@ -392,8 +416,10 @@ with right:
         duplicate_expander(cid, c, facts)
     if partial:
         with st.expander(f"{len(partial)} similar article(s) lacking key facts: likely a different report"):
-            st.caption("Same kind of story, other figures (e.g. last week's report). Add one only if it "
-                       "answers the question, and then shorten the key facts so it contains them.")
+            st.caption(
+                "Same kind of story, other figures (e.g. last week's report). Add one only if it "
+                "answers the question, and then shorten the key facts so it contains them."
+            )
             for c in partial:
                 duplicate_expander(cid, c, facts, nested=True)
 
@@ -415,8 +441,12 @@ for column, (label, label_runs) in zip(run_columns, runs.items(), strict=True):
         st.markdown(f"All runs: {across_runs([result for _, result in case_runs])}")
 
         labels_by_index = [run_label(name, result) for name, result in case_runs]
-        selected = st.selectbox("Run (newest first)", range(len(case_runs)), format_func=labels_by_index.__getitem__,
-                                key=f"run_{label}_{cid}")
+        selected = st.selectbox(
+            "Run (newest first)",
+            range(len(case_runs)),
+            format_func=labels_by_index.__getitem__,
+            key=f"run_{label}_{cid}",
+        )
         result = case_runs[selected][1]
         if result["question"] != state[f"question_{cid}"].strip():
             st.warning(f"This run used an earlier version of the question: {result['question']}")
@@ -438,11 +468,17 @@ for column, (label, label_runs) in zip(run_columns, runs.items(), strict=True):
             content, metadata = articles()[doc_id]
             mark = "✓ expected · " if doc_id in expected_now else ""
             topics = ", ".join(metadata.get("topics", [])) or "no topics"
-            with st.expander(f"{mark}{doc_id} · {metadata.get('date', '?')} · {topics} · distance {distance:.3f} · "
-                             f"{facts_label(facts, content)} · {metadata['title']}"):
+            with st.expander(
+                f"{mark}{doc_id} · {metadata.get('date', '?')} · {topics} · distance {distance:.3f} · "
+                f"{facts_label(facts, content)} · {metadata['title']}"
+            ):
                 st.markdown(highlight(content, facts), unsafe_allow_html=True)
                 if doc_id not in expected_now:
-                    st.button("Add to expected", key=f"add_{label}_{cid}_{doc_id}",
-                              on_click=add_expected, args=(cid, doc_id),
-                              help="Only if a user would be fully satisfied with this article alone. "
-                                   "Adds it to the field above; click Save to write it.")
+                    st.button(
+                        "Add to expected",
+                        key=f"add_{label}_{cid}_{doc_id}",
+                        on_click=add_expected,
+                        args=(cid, doc_id),
+                        help="Only if a user would be fully satisfied with this article alone. "
+                        "Adds it to the field above; click Save to write it.",
+                    )

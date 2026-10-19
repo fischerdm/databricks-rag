@@ -19,6 +19,7 @@ def boost_topic(chunks: list[RetrievedChunk], topic: str, amount: float, top_k: 
 
     The returned chunks keep their real distances; only the order changes.
     """
+
     def score(chunk: RetrievedChunk) -> float:
         return chunk.distance - (amount if topic in chunk.metadata.get("topics", []) else 0.0)
 

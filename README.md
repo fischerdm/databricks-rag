@@ -30,6 +30,7 @@ For development (review UI, linter):
 ```bash
 .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/ruff check .   # rules in pyproject.toml; --fix applies the safe fixes
+.venv/bin/ruff format .  # formatting
 ```
 
 ## Chat UI
