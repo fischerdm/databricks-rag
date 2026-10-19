@@ -62,7 +62,8 @@ To refresh metadata on an existing index without re-embedding (e.g. after a meta
 A golden dataset is a fixed, reviewed set of questions with known right answers ([evals/golden.jsonl](evals/golden.jsonl)). Running it after every change to prompts, models, chunking or `top_k` shows whether retrieval got better or worse. The approach, the metrics and the findings so far are explained in [docs/evaluation.md](docs/evaluation.md).
 
 ```bash
-.venv/bin/python -m evals.generate --n 50             # draft cases from corpus articles, then review them
+.venv/bin/python -m evals.generate --n 50             # draft cases from corpus articles
+.venv/bin/streamlit run evals/review_app.py           # review them (pip install -r requirements-dev.txt)
 .venv/bin/python -m evals.evaluate                    # score retrieval as /query runs it
 .venv/bin/python -m evals.evaluate --no-auto-filters  # compare: plain similarity search
 ```

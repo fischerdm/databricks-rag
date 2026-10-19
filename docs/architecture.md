@@ -88,6 +88,7 @@ scripts/
 evals/
 ├── generate.py        Drafts golden-dataset cases from corpus articles
 ├── evaluate.py        Scores retrieval against the golden dataset
+├── review_app.py      Streamlit UI for reviewing the cases
 └── golden.jsonl       The golden dataset
 ```
 

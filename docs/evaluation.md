@@ -67,7 +67,14 @@ The trick is that **the article the question was written from is the expected an
 
 ### Step 2: review the cases
 
-Generated cases are drafts. Review is what makes the dataset *golden*. For each case with `"reviewed": false`:
+Generated cases are drafts. Review is what makes the dataset *golden*. The review UI shows one case at a time, with the full text of the expected articles (key facts highlighted, and flagged if not found verbatim) and the articles the latest evaluation runs retrieved instead. Saving writes straight to `evals/golden.jsonl`, so `git diff` shows what the review changed:
+
+```bash
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/streamlit run evals/review_app.py
+```
+
+For each case with `"reviewed": false`:
 
 - **Delete or rewrite vague questions** that many articles answer equally well.
 - **Add equally good articles to `expected_doc_ids`.** Reuters often has several versions of one story, such as a short highlights item and a detailed table. If the second one is retrieved, that is not a miss.
