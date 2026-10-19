@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 os.chdir(ROOT)
 
+from evals.checks import fact_problem  # noqa: E402
 from evals.generate import DEFAULT_OUT as GOLDEN, load_cases  # noqa: E402
 from scripts.ingest_reuters import download_archive, iter_articles  # noqa: E402
 
@@ -114,10 +115,6 @@ def filter_check(applied: dict, metadata: dict) -> str:
         labels = metadata.get("topics", [])
         parts.append(f"topic {topic} vs {', '.join(labels) or 'none'} {'✓' if topic in labels else '✗'}")
     return " · ".join(parts) or "no filters applied"
-
-
-def normalize(text: str) -> str:
-    return " ".join(text.split()).lower()
 
 
 def highlight(text: str, facts: list[str]) -> str:
@@ -241,8 +238,10 @@ if flash := state.pop("flash", None):
 with st.expander("How to review: judge the case, not the system", expanded=not case.get("reviewed")):
     st.markdown(
         "Check the **case**: is the question realistic, specific and about one thing? Does the expected "
-        "article answer it? Is the reference answer correct and complete? Is every key fact in the article "
-        "and essential? Does the style match?\n\n"
+        "article answer it? Is the reference answer correct and complete? Does the question style match?\n\n"
+        "**Key facts** are what a correct answer must add beyond the question: no names or terms from the "
+        "question, as short as possible (usually a number, a name or a few words), copied verbatim from the "
+        "article (✓), and only facts a good answer cannot leave out.\n\n"
         "The **run results** below only help with two decisions: whether a retrieved article answers the "
         "question equally well (then add it to the expected articles), and whether a miss is the system's "
         "fault. A wrong filter or a topic that differs from the article's Reuters labels is the system's "
@@ -263,12 +262,15 @@ with left:
                   "Only a dated question gives filter extraction a date to work with, so scores are "
                   "reported per style.")
     st.text_area("Reference answer", key=f"answer_{cid}", height=110)
-    st.text_area("Key facts (one per line)", key=f"facts_{cid}", height=90)
+    st.text_area("Key facts (one per line)", key=f"facts_{cid}", height=90,
+                 help="What a correct answer must add beyond the question. Not repeated from the question, "
+                      "as short as possible, verbatim from the article, essential. ✓/✗ below checks the "
+                      "first three automatically.")
 
-    source_text = normalize(" ".join(articles()[d][0] for d in lines(state[f"expected_{cid}"]) if d in articles()))
+    source_text = " ".join(articles()[d][0] for d in lines(state[f"expected_{cid}"]) if d in articles())
     for fact in lines(state[f"facts_{cid}"]):
-        found = normalize(fact) in source_text
-        st.caption(f"{'✓' if found else '✗ not found verbatim:'} {fact}")
+        problem = fact_problem(fact, source_text, state[f"question_{cid}"])
+        st.caption(f"✗ {fact}: {problem}" if problem else f"✓ {fact}")
 
     st.text_area("Expected article ids (one per line)", key=f"expected_{cid}", height=90)
     st.text_area("Notes (what you changed and why)", key=f"notes_{cid}", height=70)

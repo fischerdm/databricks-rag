@@ -60,13 +60,24 @@ So far the evaluation scores **retrieval**: does the search find the article tha
    |---|---|
    | `question` | One short question (at most 20 words) that this article answers, specific enough that it is the best match among 19,000 articles |
    | `reference_answer` | One or two sentences, only facts stated in the article |
-   | `key_facts` | One to three short facts, such as names or numbers, copied verbatim from the article |
+   | `key_facts` | One to three facts the answer must contribute beyond the question: verbatim from the article, as short as possible, never repeating the question |
 
 3. Randomly make about half the questions `dated` and the rest `undated`. Dated questions test filter extraction; undated ones test plain similarity search.
 
 The trick is that **the article the question was written from is the expected answer**, so no labelling is needed. Running the script again appends new cases and skips articles already in the file.
 
-**Key facts come from the article, not from the question.** The verbatim rule is what makes them checkable: a fact should appear word for word in the article, which the review UI verifies and highlights. Key facts do not affect the retrieval scores. They are for scoring answers later, where a cheap first check is whether an answer contains them ('5,240', '17.6 pct'). That is why they need checking now: a fact that is not essential to the answer, such as the name of a weather service quoted in a weather story, would later count a good answer as wrong.
+**Key facts come from the article, not from the question.** They are what a correct answer must *add* to the question. Key facts do not affect the retrieval scores. They are for scoring answers later, where a cheap first check is whether an answer contains them ('28,526', '17.6 pct'). That only works if they follow four rules:
+
+| Rule | Bad | Good | Why |
+|---|---|---|---|
+| Verbatim from the article | 'Malaysia 28,526 tonnes' (the article says 'Malaysia has been allocated an export quota of 28,526 tonnes') | '28,526' | Checked by exact string matching |
+| Never repeats the question | 'Fidelcor Business Credit Corp' for 'What did Fidelcor Business Credit Corp agree to buy…?' | 'loan portfolio' | Every answer repeats the question's names, so the check would always pass |
+| As short as possible | 'most of Lazere's loan portfolio' | 'loan portfolio' | A correct answer may word the rest differently ('most of its loan portfolio') |
+| Essential | the group total '96,000 tonnes' for a question about Malaysia's and Indonesia's quotas | (left out) | A good answer that leaves it out would be counted as wrong |
+
+**Shape versus content.** The reply's *shape* (a question, a reference answer, a list of key facts) is enforced by OpenAI's structured outputs, from the Pydantic model `GeneratedCase`. The *content* rules need the article, which a JSON schema cannot express, so a Pydantic validator checks them after parsing, with the article passed as validation context. The first three rules are checked by [evals/checks.py](../evals/checks.py); if a reply breaks one, the generator sends the error back to the LLM ('key fact "Aldo Hofmeister" only repeats the question') and asks again, up to three attempts, and skips the article if it still fails. Whether a fact is essential cannot be checked automatically; that stays with the prompt and the review. The same check marks key facts ✓ or ✗ in the review UI.
+
+The 'repeats the question' check rejects a fact only if *all* its words are in the question (ignoring function words and company suffixes such as 'Corp'), so '30.50 dlrs per share' passes for a question about the price per share: '30.50' is new.
 
 ```bash
 .venv/bin/python -m evals.generate --n 50
@@ -88,7 +99,7 @@ For each case with `"reviewed": false`:
 - **Delete or rewrite vague questions** that many articles answer equally well.
 - **Add equally good articles to `expected_doc_ids`.** Reuters often has several versions of one story, such as a short highlights item and a detailed table. If the second one is retrieved, that is not a miss. See [deciding on another article](#deciding-on-another-article) below.
 - **Check the reference answer** against the article: correct, complete, only facts from the article.
-- **Check the key facts:** each one appears in the article (the UI marks it ✓ or ✗) and is essential to answering the question. Remove facts a good answer could leave out.
+- **Check the key facts** against the four rules above. The UI marks each one ✓ or ✗ for the first three; whether it is essential is your call. Remove facts a good answer could leave out.
 - **Check the style:** an `undated` question must not mention a date or period such as 'Jan/Feb'.
 - **Never change a case to make a system failure go away.** If the right article was excluded by a wrong filter, the case is correct and the system is not.
 - Set `"reviewed": true`, and write what you decided in `notes` if you changed anything.
@@ -261,6 +272,20 @@ The search itself is deterministic: same question, same embedding, same ranking.
 **Finding 3: the topic filter also helps, but less often than it hurts.** In q0025 (Allis-Chalmers restructuring) and q0026 (Dauphin Deposit acquisition), the inferred `acq` filter moved the right article from rank 2 to rank 1, in all three runs. Against that, 5–7 cases per run lose the right article entirely. Any fix should keep the benefit if it can, e.g. by using the topic to boost matching articles rather than to exclude the others.
 
 **Next.** Review the remaining 37 cases, then compare the filter options from the baseline entry over several runs each.
+
+### 2026-10-19: key facts repeated the question
+
+**Observation.** During review, key facts turned out to name what the question already names: 'Fidelcor Business Credit Corp' for 'What did Fidelcor Business Credit Corp agree to buy…?'. A scan of all 50 cases flagged 41; most listed the company or person from the question, five facts did not appear verbatim in the article, and many were longer than needed or not essential. The cases already marked reviewed were affected too: the review had focused on questions and expected articles.
+
+**Cause.** The generator prompt asked for 'facts a correct answer must contain'. A correct answer does contain the question's names, because it repeats them. Structured outputs enforced the reply's shape but nothing about its content.
+
+**Fix.**
+
+- All 50 cases: key facts rewritten by hand against the article (49 changed; the old facts are kept in each case's `notes`), and verified by [evals/checks.py](../evals/checks.py).
+- Generator: rules in the prompt, plus a Pydantic validator that rejects facts that are not verbatim or only repeat the question, with up to two retries that send the errors back. In a test with 8 new cases, all passed on the first attempt.
+- Review UI and checklist: the same check, and the four rules in 'How to review'.
+
+Retrieval scores are unaffected: key facts are only used for answer scoring, which comes next.
 
 ## 7. Pitfalls
 

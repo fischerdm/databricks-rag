@@ -87,6 +87,7 @@ scripts/
 └── ingest_reuters.py  Downloads, parses and indexes Reuters-21578
 evals/
 ├── generate.py        Drafts golden-dataset cases from corpus articles
+├── checks.py          Rules for key facts, shared by generator and review UI
 ├── evaluate.py        Scores retrieval against the golden dataset
 ├── review_app.py      Streamlit UI for reviewing the cases
 └── golden.jsonl       The golden dataset

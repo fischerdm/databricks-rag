@@ -20,10 +20,11 @@ from collections import Counter
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError, ValidationInfo, field_validator
 
 from app.services import vector
 from app.services.llm import _client
+from evals.checks import fact_problem
 from scripts.ingest_reuters import download_archive, iter_articles
 
 DEFAULT_OUT = Path("evals/golden.jsonl")
@@ -38,10 +39,38 @@ MAX_TOPIC_SHARE = 0.25
 Style = Literal["dated", "undated"]
 
 
+# Attempts per article: the first answer plus retries that send the validation errors back.
+MAX_ATTEMPTS = 3
+
+
 class GeneratedCase(BaseModel):
+    """The LLM's reply. The JSON schema fixes its shape; the validator checks the content.
+
+    The content rules need the article, passed as validation context. OpenAI's SDK parses the
+    reply without context, so the check runs in a second, explicit validation step.
+    """
+
     question: str = Field(description="The question a user would type")
     reference_answer: str = Field(description="One or two sentences answering it, using only the article")
-    key_facts: list[str] = Field(description="1-3 short facts (names, numbers) a correct answer must contain")
+    key_facts: list[str] = Field(
+        description="1-3 short facts the answer adds beyond the question, copied verbatim from the article"
+    )
+
+    @field_validator("key_facts")
+    @classmethod
+    def check_key_facts(cls, facts: list[str], info: ValidationInfo) -> list[str]:
+        if not info.context:
+            return facts
+        if not 1 <= len(facts) <= 3:
+            raise ValueError(f"give one to three key facts, not {len(facts)}")
+        problems = [
+            f"key fact {fact!r} {problem}"
+            for fact in facts
+            if (problem := fact_problem(fact, info.context["article"], info.data.get("question", "")))
+        ]
+        if problems:
+            raise ValueError("; ".join(problems))
+        return facts
 
 
 SYSTEM_PROMPT = """You write test questions for a search assistant over an archive of 19,000
@@ -56,7 +85,12 @@ article answers.
 - It must be answerable from the article alone.
 
 reference_answer: one or two sentences, only facts stated in the article.
-key_facts: one to three short facts, such as names or numbers, copied verbatim from the article."""
+
+key_facts: one to three facts a correct answer must contribute beyond the question.
+- Copy each one verbatim from the article, so it can be found by exact string matching.
+- Keep each as short as possible: usually a number ("28,526"), a name, or a phrase of two to four words.
+- Never repeat names or terms that are already in the question: the answer repeats them anyway.
+- Only facts a good answer cannot leave out; no background details."""
 
 STYLE_RULES: dict[Style, str] = {
     # The article's date (second line) is its publication date, which is what date filters match.
@@ -103,17 +137,31 @@ def sample_articles(n: int, seed: int, exclude: set[str]) -> list[tuple[str, str
     return picked
 
 
-async def generate_case(article: tuple[str, str, dict], style: Style, model: str) -> GeneratedCase:
-    _, content, _ = article
-    completion = await _client().chat.completions.parse(
-        model=model,
-        messages=[
-            {"role": "system", "content": f"{SYSTEM_PROMPT}\n\n{STYLE_RULES[style]}"},
-            {"role": "user", "content": content},
-        ],
-        response_format=GeneratedCase,
-    )
-    return completion.choices[0].message.parsed
+async def generate_case(article: tuple[str, str, dict], style: Style, model: str) -> GeneratedCase | None:
+    """Ask for a case; if it breaks the key-fact rules, send the errors back and ask again.
+
+    Returns None if the reply still breaks the rules after MAX_ATTEMPTS.
+    """
+    doc_id, content, _ = article
+    messages = [
+        {"role": "system", "content": f"{SYSTEM_PROMPT}\n\n{STYLE_RULES[style]}"},
+        {"role": "user", "content": content},
+    ]
+    for _ in range(MAX_ATTEMPTS):
+        completion = await _client().chat.completions.parse(
+            model=model, messages=messages, response_format=GeneratedCase
+        )
+        draft = completion.choices[0].message.parsed
+        try:
+            return GeneratedCase.model_validate(draft.model_dump(), context={"article": content})
+        except ValidationError as exc:
+            problems = "; ".join(error["msg"].removeprefix("Value error, ") for error in exc.errors())
+            messages += [
+                {"role": "assistant", "content": draft.model_dump_json()},
+                {"role": "user", "content": f"Your answer breaks the rules: {problems}. Answer again, fixing this."},
+            ]
+    print(f"Skipped {doc_id}: key facts still invalid after {MAX_ATTEMPTS} attempts ({problems}).")
+    return None
 
 
 async def main() -> None:
@@ -137,11 +185,12 @@ async def main() -> None:
         async with semaphore:
             return await generate_case(article, style, args.model)
 
-    generated = await asyncio.gather(*(limited(a, s) for a, s in zip(articles, styles)))
+    drafts = await asyncio.gather(*(limited(a, s) for a, s in zip(articles, styles)))
+    generated = [(a, s, case) for a, s, case in zip(articles, styles, drafts) if case is not None]
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("a") as f:
-        for i, ((doc_id, _, metadata), style, case) in enumerate(zip(articles, styles, generated)):
+        for i, ((doc_id, _, metadata), style, case) in enumerate(generated):
             record = {
                 "id": f"q{len(existing) + i + 1:04d}",
                 "question": case.question,
