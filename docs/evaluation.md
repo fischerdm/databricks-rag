@@ -54,10 +54,19 @@ So far the evaluation scores **retrieval**: does the search find the article tha
 [evals/generate.py](../evals/generate.py) builds cases from the corpus itself:
 
 1. Sample articles that are indexed, have a date and a topic, and are at least 400 characters long. No single topic may make up more than 25% of the cases; otherwise about 40% would be earnings reports.
-2. Give each article to an LLM (`gpt-5.4-mini`) with instructions to write one short question that this article answers, specific enough that it is the best match among 19,000 articles, plus a reference answer.
+2. Give each article to an LLM (`gpt-5.4-mini`) and ask for a structured reply with three fields, all written from the article in one call:
+
+   | Field | Instruction to the LLM |
+   |---|---|
+   | `question` | One short question (at most 20 words) that this article answers, specific enough that it is the best match among 19,000 articles |
+   | `reference_answer` | One or two sentences, only facts stated in the article |
+   | `key_facts` | One to three short facts, such as names or numbers, copied verbatim from the article |
+
 3. Randomly make about half the questions `dated` and the rest `undated`. Dated questions test filter extraction; undated ones test plain similarity search.
 
 The trick is that **the article the question was written from is the expected answer**, so no labelling is needed. Running the script again appends new cases and skips articles already in the file.
+
+**Key facts come from the article, not from the question.** The verbatim rule is what makes them checkable: a fact should appear word for word in the article, which the review UI verifies and highlights. Key facts do not affect the retrieval scores. They are for scoring answers later, where a cheap first check is whether an answer contains them ('5,240', '17.6 pct'). That is why they need checking now: a fact that is not essential to the answer, such as the name of a weather service quoted in a weather story, would later count a good answer as wrong.
 
 ```bash
 .venv/bin/python -m evals.generate --n 50
@@ -77,12 +86,30 @@ Generated cases are drafts. Review is what makes the dataset *golden*. The revie
 For each case with `"reviewed": false`:
 
 - **Delete or rewrite vague questions** that many articles answer equally well.
-- **Add equally good articles to `expected_doc_ids`.** Reuters often has several versions of one story, such as a short highlights item and a detailed table. If the second one is retrieved, that is not a miss.
-- **Check the reference answer** against the article.
+- **Add equally good articles to `expected_doc_ids`.** Reuters often has several versions of one story, such as a short highlights item and a detailed table. If the second one is retrieved, that is not a miss. See [deciding on another article](#deciding-on-another-article) below.
+- **Check the reference answer** against the article: correct, complete, only facts from the article.
+- **Check the key facts:** each one appears in the article (the UI marks it ✓ or ✗) and is essential to answering the question. Remove facts a good answer could leave out.
+- **Check the style:** an `undated` question must not mention a date or period such as 'Jan/Feb'.
 - **Never change a case to make a system failure go away.** If the right article was excluded by a wrong filter, the case is correct and the system is not.
 - Set `"reviewed": true`, and write what you decided in `notes` if you changed anything.
 
 **Start with the misses.** A case the system already ranks first rarely hides a problem with `expected_doc_ids`. For a miss, the articles retrieved instead are the candidates for equally good answers, so you only judge those few, never the whole corpus. Search benchmarks have been built this way for decades ('pooling'). An equally good article that no run ever retrieves stays unknown; it does not distort the scores, and it shows up for review once a better version of the system retrieves it.
+
+#### Deciding on another article
+
+In the review UI, the articles a run retrieved are listed under 'Evaluation runs'; open one to read it with the key facts highlighted. The column without auto filters is usually the better candidate list, since no wrong filter has removed anything. Then ask one question: **would a user asking this question be fully satisfied with this article alone?**
+
+| Add it if… | Don't add it if… |
+|---|---|
+| It is the same story again: an update, a repeat, a short version | It is only on the same subject |
+| It contains the facts of the reference answer. Many highlighted key facts are a strong sign | It answers only part of the question |
+| A user would not care which of the two they got | It gives different figures, or another source's view |
+
+Examples from the first review:
+
+- **q0008, added.** reuters-3065 has the same title, the same day and the same '2.5 pct' growth figure: the same story.
+- **q0004, not added.** The higher-ranked Colombia articles are about coffee export registrations, but none states the registration price the question asks for.
+- **q0039, not added.** The higher-ranked article is a growth forecast from the DIW institute, not the Bundesbank: same subject, different answer.
 
 ## 3. Metrics
 

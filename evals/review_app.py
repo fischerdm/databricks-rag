@@ -30,6 +30,22 @@ from scripts.ingest_reuters import download_archive, iter_articles  # noqa: E402
 RUNS_DIR = Path("evals/runs")
 STYLES = ["dated", "undated"]
 
+ADD_HELP = """**Add a retrieved article to the expected articles?**
+
+Ask: would a user asking this question be fully satisfied with this article alone?
+
+Add it if:
+- it is the same story again (an update, a repeat, a short version)
+- it contains the facts of the reference answer; many highlighted key facts are a strong sign
+- a user would not care which of the two they got
+
+Don't add it if:
+- it is only on the same subject
+- it answers only part of the question
+- it gives different figures, or another source's view
+
+The column without auto filters is usually the better candidate list: no wrong filter has removed anything."""
+
 st.set_page_config(page_title="Golden dataset review", layout="wide")
 
 
@@ -247,8 +263,11 @@ with right:
             st.markdown(highlight(content, facts), unsafe_allow_html=True)
 
 st.divider()
-st.markdown("#### Evaluation runs")
-st.caption("The articles retrieved instead are the candidates for equally good answers: add them if they answer the question as well.")
+st.markdown("#### Evaluation runs", help=ADD_HELP)
+st.caption(
+    "The articles retrieved instead are the candidates for equally good answers. "
+    "Open one to read it, and add it if it answers the question as well (hover ? for the rule)."
+)
 run_columns = st.columns(len(runs), gap="large")
 expected_now = set(lines(state[f"expected_{cid}"]))
 for column, (label, label_runs) in zip(run_columns, runs.items()):
@@ -278,4 +297,6 @@ for column, (label, label_runs) in zip(run_columns, runs.items()):
                 st.markdown(highlight(content, facts), unsafe_allow_html=True)
                 if doc_id not in expected_now:
                     st.button("Add to expected", key=f"add_{label}_{cid}_{doc_id}",
-                              on_click=add_expected, args=(cid, doc_id))
+                              on_click=add_expected, args=(cid, doc_id),
+                              help="Only if a user would be fully satisfied with this article alone. "
+                                   "Adds it to the field above; click Save to write it.")
