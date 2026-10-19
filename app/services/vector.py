@@ -94,6 +94,14 @@ def update_metadata(documents: list[tuple[str, str, dict[str, MetadataValue | No
     return len(ids)
 
 
+def document_metadata(document_ids: list[str]) -> dict[str, dict[str, MetadataValue]]:
+    """Return each indexed document's metadata, read from its first chunk. Unknown ids are left out."""
+    if not document_ids:
+        return {}
+    result = _collection().get(ids=[f"{d}:0" for d in document_ids], include=["metadatas"])
+    return {m["document_id"]: m for m in result["metadatas"]}
+
+
 def build_filter(filters: SearchFilters) -> dict | None:
     """Translate search filters into a Chroma `where` clause."""
     conditions = []

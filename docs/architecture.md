@@ -81,12 +81,17 @@ app/
 └── services/
     ├── vector.py      Chunking, embeddings, Chroma storage and search
     ├── filters.py     LLM-based filter extraction and merging
+    ├── retrieval.py   Extraction + filtered search + fallback, shared by /query and the evals
     └── llm.py         Prompting and streaming the answer
 scripts/
 └── ingest_reuters.py  Downloads, parses and indexes Reuters-21578
+evals/
+├── generate.py        Drafts golden-dataset cases from corpus articles
+├── evaluate.py        Scores retrieval against the golden dataset
+└── golden.jsonl       The golden dataset
 ```
 
-The dependency direction is one-way: `main` → `services` → `schemas`/`config`/`topics`. Services never import `main`, and `schemas` imports nothing from the app.
+The dependency direction is one-way: `main` → `services` → `schemas`/`config`/`topics`. Services never import `main`, and `schemas` imports nothing from the app. `evals` uses the services like `main` does, and nothing in `app` imports `evals`.
 
 ### config.py — settings
 
@@ -176,6 +181,8 @@ Everything that touches Chroma or the embedding API.
 **`add_documents([(document_id, content, metadata), ...])`** — the write path. For each document: chunk it, give each chunk the id `"{document_id}:{chunk_number}"`, and add `document_id` and `chunk` to its metadata. All chunks of all documents go into **one** embedding call, then one Chroma `upsert`. Upsert means 'insert, or overwrite if the id exists', which makes re-running an import safe. `add_document` is the single-document shortcut used by `/index`.
 
 **`update_metadata(documents)`** — rewrites metadata without re-embedding (free). It recomputes chunk ids the same way as `add_documents` and calls Chroma's `update`. Chroma *merges* metadata on update, so to remove a key you must set it to `None` explicitly.
+
+**`document_metadata(document_ids)`** — the metadata of each indexed document, read from its first chunk; unknown ids are left out. The evaluation uses it to check which golden articles are indexed and whether the applied filters admit them.
 
 **`build_filter(filters)`** — translates `SearchFilters` into Chroma's filter syntax:
 
@@ -289,12 +296,13 @@ Every `data` payload is JSON-encoded, including tokens. A raw newline inside a t
 
 1. `top_k` = request value or the `TOP_K` setting.
 2. `explicit` = the filter fields copied out of the request into a plain `SearchFilters`.
-3. If `auto_filters`: `applied = merge_filters(explicit, await extract_filters(question))`; otherwise `applied = explicit`.
-4. `chunks = search(question, top_k, applied)`.
-5. **Fallback:** if no chunks were found *and* extracted filters were involved (`applied != explicit`), search again with `explicit` only. Extracted filters can be too narrow — e.g. a date outside the corpus — and an answer from unfiltered results is better than none.
-6. Return `stream_answer(question, chunks, applied)` as `text/event-stream`.
+3. `applied, chunks = retrieval.retrieve(question, top_k, explicit, auto_filters)`, which does steps 3a–3c:
+   1. If `auto_filters`: `applied = merge_filters(explicit, await extract_filters(question))`; otherwise `applied = explicit`.
+   2. `chunks = search(question, top_k, applied)`.
+   3. **Fallback:** if no chunks were found *and* extracted filters were involved (`applied != explicit`), search again with `explicit` only. Extracted filters can be too narrow — e.g. a date outside the corpus — and an answer from unfiltered results is better than none.
+4. Return `stream_answer(question, chunks, applied)` as `text/event-stream`.
 
-Chroma and the embedding client are synchronous, so `search` runs via `run_in_threadpool` to avoid blocking the async event loop while it waits on the network or disk.
+The retrieval steps live in `services/retrieval.py` rather than in the endpoint so the evaluation scripts run exactly the same pipeline. Chroma and the embedding client are synchronous, so `search` runs via `asyncio.to_thread` to avoid blocking the async event loop while it waits on the network or disk.
 
 ### scripts/ingest_reuters.py — corpus import
 
@@ -364,7 +372,7 @@ A list allows exact membership checks with `$contains`. With a comma-separated s
 ## 7. Known limitations
 
 - **Documents from `/index` have no `date_int` or `topics`.** Any date or topic filter excludes them. With `auto_filters` on, a question that mentions a date will therefore skip them, unless the filtered search returns nothing and the fallback kicks in.
-- **The fallback only triggers on zero results.** If extracted filters are wrong but still match something, the wrong results are used. The `filters` event makes this visible to the client.
+- **The fallback only triggers on zero results.** If extracted filters are wrong but still match something, the wrong results are used. The `filters` event makes this visible to the client. The evaluation measured the effect: a wrong topic is the main source of retrieval misses ([evaluation.md](evaluation.md#6-findings)).
 - **One topic per question.** 'Oil and gold prices' can only be filtered by one of the two; the extraction picks one, or none.
 - **The extraction prompt is corpus-specific.** Date range, topic list and examples are written for Reuters-21578. A different corpus needs its own `topics.py` and prompt.
 - **Similarity search ranks by meaning, not by importance.** Within the filtered candidates, the 'closest' chunks are not necessarily the most informative.
