@@ -94,6 +94,53 @@ def update_metadata(documents: list[tuple[str, str, dict[str, MetadataValue | No
     return len(ids)
 
 
+def document_metadata(document_ids: list[str]) -> dict[str, dict[str, MetadataValue]]:
+    """Return each indexed document's metadata, read from its first chunk. Unknown ids are left out."""
+    if not document_ids:
+        return {}
+    result = _collection().get(ids=[f"{d}:0" for d in document_ids], include=["metadatas"])
+    return {m["document_id"]: m for m in result["metadatas"]}
+
+
+def document_distances(query: str, document_ids: list[str]) -> dict[str, float]:
+    """Cosine distance from the query to the closest chunk of each document, as search ranks them.
+
+    Unlike search, this ignores filters and top_k, so it also works for documents search did not return.
+    """
+    if not document_ids:
+        return {}
+    query_vec = embed([query])[0]
+    query_norm = sum(x * x for x in query_vec) ** 0.5
+    result = _collection().get(
+        where={"document_id": {"$in": document_ids}}, include=["embeddings", "metadatas"]
+    )
+    distances: dict[str, float] = {}
+    for vec, metadata in zip(result["embeddings"], result["metadatas"]):
+        similarity = sum(a * b for a, b in zip(query_vec, vec)) / (query_norm * sum(x * x for x in vec) ** 0.5)
+        doc_id = metadata["document_id"]
+        distances[doc_id] = min(distances.get(doc_id, 2.0), float(1 - similarity))
+    return distances
+
+
+def similar_documents(document_id: str, max_distance: float, limit: int = 10) -> dict[str, float]:
+    """Other documents whose first chunk lies within max_distance of this document's first chunk.
+
+    Comparing first chunks (title, date and opening paragraph) finds re-sent and rewritten
+    versions of one news story. Returns {document_id: distance}, closest first.
+    """
+    own = _collection().get(ids=[f"{document_id}:0"], include=["embeddings"])
+    if not len(own["ids"]):
+        return {}
+    result = _collection().query(
+        query_embeddings=[own["embeddings"][0]], n_results=limit + 1, where={"chunk": 0}
+    )
+    return {
+        metadata["document_id"]: distance
+        for metadata, distance in zip(result["metadatas"][0], result["distances"][0])
+        if metadata["document_id"] != document_id and distance <= max_distance
+    }
+
+
 def build_filter(filters: SearchFilters) -> dict | None:
     """Translate search filters into a Chroma `where` clause."""
     conditions = []

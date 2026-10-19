@@ -12,7 +12,7 @@ A minimal RAG backend: index text over an API, then ask questions and get a stre
 - **Vector store:** Chroma (persisted locally in `data/chroma`)
 - **Chat UI:** Chainlit, served at `/ui`
 
-How it works, component by component: [docs/architecture.md](docs/architecture.md).
+How it works, component by component: [docs/architecture.md](docs/architecture.md). How it is evaluated: [docs/evaluation.md](docs/evaluation.md).
 
 ## Setup
 
@@ -56,6 +56,26 @@ Keep the `--port`: Chainlit also defaults to port 8000, and without it the UI wo
 Each chunk carries `title`, `date`, `date_int` (e.g. `19870315`, for range filters), `topics` and `places` (lists of Reuters codes) as metadata. Re-running the script updates existing entries instead of duplicating them.
 
 To refresh metadata on an existing index without re-embedding (e.g. after a metadata format change), run `python -m scripts.ingest_reuters --metadata-only`.
+
+## Evaluation: golden dataset
+
+A golden dataset is a fixed, reviewed set of questions with known right answers ([evals/golden.jsonl](evals/golden.jsonl)). Running it after every change to prompts, models, chunking or `top_k` shows whether retrieval got better or worse. The approach, the metrics and the findings so far are explained in [docs/evaluation.md](docs/evaluation.md).
+
+```bash
+.venv/bin/python -m evals.generate --n 50             # draft cases from corpus articles
+.venv/bin/streamlit run evals/review_app.py           # review them (pip install -r requirements-dev.txt)
+.venv/bin/python -m evals.checks                      # check all cases against the dataset rules
+.venv/bin/python -m evals.evaluate                    # score retrieval as /query runs it
+.venv/bin/python -m evals.evaluate --no-auto-filters  # compare: plain similarity search
+```
+
+| Metric | Meaning |
+|---|---|
+| `hit@1`, `hit@k` | Share of questions where the expected article is ranked first / retrieved at all |
+| `MRR` | Mean of 1/rank of the expected article; 0 if not retrieved |
+| `filt.out` | Share of questions where the inferred filters excluded the expected article before the search |
+
+**Findings so far:** the inferred topic filter hurts retrieval (hit@4 82–86% with filter extraction, 96% without), because a wrong topic removes the right article and the fallback only runs on zero results. Filter extraction also varies between identical runs. Details in [docs/evaluation.md](docs/evaluation.md#6-findings).
 
 ## Endpoints
 
@@ -115,7 +135,7 @@ This is a boilerplate: it runs well on one machine for one user. Before exposing
 - **Resilience around OpenAI.** Set timeouts and retries with backoff, and send an `error` event on the SSE stream when generation fails midway, so clients can tell a broken answer from a finished one.
 - **Deployment.** A Dockerfile, no `--reload`, several workers, and a reverse proxy configured not to buffer SSE responses. Pin dependency versions with a lock file; `requirements.txt` only sets lower bounds.
 - **Observability.** Structured logs, request metrics, and traces of each step (filter extraction, retrieval, generation) with token usage and cost. `/health` is a liveness check only; add a readiness check that reaches the vector store.
-- **Tests and evaluation.** Unit and API tests in CI, and an evaluation set of questions with expected sources to catch retrieval and answer-quality regressions when prompts, models or chunking change.
+- **Tests and evaluation.** Unit and API tests in CI. The [golden dataset](#evaluation-golden-dataset) scores retrieval; answer quality (faithfulness, correctness, refusals) is not scored yet. Run the evaluation in CI and fail on drops in its scores.
 - **Security of the content itself.** Indexed documents end up in the prompt, so untrusted documents can carry prompt injections. Restrict who can index, and treat answers as untrusted output.
 
 ### Why FastAPI
