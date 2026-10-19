@@ -83,11 +83,19 @@ def expected_distances(question: str, document_ids: tuple[str, ...]) -> dict[str
 
 
 def load_runs(auto_filters: bool) -> list[tuple[str, dict[str, dict]]]:
-    """All evaluation runs with this auto_filters setting, newest first, results keyed by case id."""
+    """All evaluation runs with this auto_filters setting, newest first, results keyed by case id.
+
+    Auto-filter runs only count in the default topic mode (as /query runs); runs comparing other
+    modes would mix in candidates the real system never retrieves. Older runs predate topic_mode.
+    """
+    from app.config import Settings  # here: get_settings() would need OPENAI_API_KEY
+
+    default_mode = Settings.model_fields["topic_mode"].default
     runs = []
     for path in sorted(RUNS_DIR.glob("*-retrieval.json"), reverse=True):
         run = json.loads(path.read_text())
-        if run["config"]["auto_filters"] == auto_filters:
+        mode = run["config"].get("topic_mode", "filter")
+        if run["config"]["auto_filters"] == auto_filters and (not auto_filters or mode == default_mode):
             runs.append((path.name, {r["id"]: r for r in run["results"]}))
     return runs
 

@@ -35,7 +35,10 @@ class QueryInput(SearchFilters):
     top_k: int | None = Field(default=None, ge=1, le=20)
     auto_filters: bool = Field(
         default=True,
-        description="Extract date range and topic from the question; explicit filters take precedence",
+        description=(
+            "Extract filters from the question: the date range, and the topic only if the server's "
+            "TOPIC_MODE uses it (default: dates only). Explicit filters take precedence"
+        ),
     )
 
 

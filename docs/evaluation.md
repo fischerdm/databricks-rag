@@ -189,6 +189,8 @@ question ─► wrong filter ─► right article removed ─► 4 other article
 - **Dates are low risk.** The question states them, so the LLM mostly copies them.
 - **Topics are high risk.** Topic codes were assigned by Reuters editors in 1987, from a fixed list of 119. The LLM has to guess which code an editor chose, and that guess is subjective.
 
+The evaluation confirmed this, so the extracted topic is no longer applied by default (`topic_mode` = `off`, see [the findings](#2026-10-19-topic-as-filter-boost-or-not-at-all)). The topic is still extracted, and `topic_mode` = `filter` restores the behaviour described above.
+
 ## 5. Running the evaluation
 
 [evals/evaluate.py](../evals/evaluate.py) runs each question through the same retrieval pipeline as `/query` ([app/services/retrieval.py](../app/services/retrieval.py)), so the scores describe the real system and not a copy of it.
@@ -198,6 +200,7 @@ question ─► wrong filter ─► right article removed ─► 4 other article
 .venv/bin/python -m evals.evaluate --no-auto-filters  # plain similarity search, for comparison
 .venv/bin/python -m evals.evaluate --reviewed-only    # only reviewed cases
 .venv/bin/python -m evals.evaluate --top-k 8          # retrieve more chunks
+.venv/bin/python -m evals.evaluate --topic-mode boost --topic-boost 0.05  # how an extracted topic is used
 ```
 
 Output: the metrics overall and per `style`, then every case not ranked first with its applied filters and the retrieved titles. The full results and the settings used are written to `evals/runs/` (git-ignored), so two runs can be compared.
@@ -340,6 +343,52 @@ q0048 and q0010 were already excluded in some of the earlier runs, but the previ
 **Finding 2: the topic filter helps in three cases.** In q0025 (Allis-Chalmers) and q0026 (Dauphin Deposit), the inferred `acq` moved the right article from rank 2 to rank 1 in all five runs. In q0021 (G-7 statement), `trade` brought the article from not retrieved to rank 1, but in only one of five runs.
 
 **The target for a fix.** Plain search sets the bar: hit@4 96%, hit@1 88%. A fix succeeds if it closes the 10-point hit@4 gap without losing the hit@1 gains from Finding 2. Each candidate needs several runs too, because its filter extraction varies as well.
+
+### 2026-10-19: topic as filter, boost, or not at all
+
+**Setup.** As in the reviewed baseline. The extracted topic is now used according to `topic_mode`:
+
+| Mode | What the extracted topic does |
+|---|---|
+| `filter` | Keeps only articles with that label (the behaviour so far) |
+| `off` | Nothing: only the extracted dates filter |
+| `boost` | Search with the dates only, take 5 × `top_k` candidates, subtract `topic_boost` from the distance of chunks with that label, keep the best `top_k` |
+
+A topic set explicitly by the client always filters. `boost` was planned with 0.05, chosen before any run; 0.02 and 0.10 were run to see how sensitive the result is, not to pick the best value. Five runs per configuration.
+
+| | hit@1 | hit@4 | MRR | filt.out |
+|---|---|---|---|---|
+| `filter` (baseline) | 82% (80–84) | 86% (84–88) | 0.83 | 11% |
+| **`off`** | **88%** (88–88) | **94%** (94–94) | **0.91** | 2% |
+| `boost` 0.02 | 90% (90–90) | 94% (94–94) | 0.92 | 2% |
+| `boost` 0.05 | 90% (88–90) | 94% (92–94) | 0.91 | 2% |
+| `boost` 0.10 | 89% (88–90) | 95% (94–96) | 0.92 | 2% |
+| plain search, no extraction | 88% | 96% | 0.92 | 0% |
+
+**Finding 1: no longer filtering by topic closes almost the whole gap.** hit@4 rises from 86% to 94% and hit@1 from 82% to 88%, in every run. All seven cases the topic alone excluded in the baseline are found again. The remaining 2 points to plain search are q0033, whose date filter (Jan–Feb) excludes an article published on March 11: the publication-date pitfall, not the topic.
+
+**Finding 2: `off` is also stable.** All five runs gave the same scores. With `filter`, hit@4 ranged over 4 points, because the extracted topic changed from run to run and each change decided whether an article could be found. The dates vary much less (one exception below).
+
+**Finding 3: the boost wins or loses single cases, depending on distance gaps.** The boost reorders two articles when the gap between their distances is smaller than the boost:
+
+| Case | Boosted topic | Right article vs the one above it | Effect |
+|---|---|---|---|
+| q0025 Allis-Chalmers | `acq` (right) | 0.247 vs 0.232 | rank 2 → 1 with every boost |
+| q0021 G-7 statement | `trade` (right, in 3 of 5 runs) | 0.392 vs 0.318 | not retrieved → rank 1, only with 0.10 |
+| q0015 Cehave levy | `grain` (wrong) | 0.265 vs 0.360 | rank 1 → 2, only with 0.10 |
+
+A small boost gains one case (q0025, 2 points of hit@1). A large one gains q0021 but loses q0015, because a wrong topic is boosted just as strongly as a right one. On 50 cases, all three boost values are within one or two cases of `off`, which is within what one case flipping can do.
+
+**Corrections to the baseline entry.** q0026 (Dauphin Deposit) was counted as a case the topic filter helps. With `off` it is ranked first in all five runs, so the date filter (April 13) does that, not the topic. And in one `boost` 0.05 run, q0029 was not found because extraction turned 'fourth-quarter' into a date filter for October 1–20; that is date extraction varying, not the boost.
+
+**Decision.** `topic_mode` now defaults to `off`. It removes the loss, is stable across runs, and needs no parameter. The boost's gain rests on one case with a 0.015 distance gap, and its value would be tuned on the cases we report.
+
+**Why keep the boost.** A filter treats the topic as a hard rule: a wrong guess makes the right article impossible to find. The boost treats it as a second signal added to the distance, so a wrong guess costs the right article only the size of the boost. The top `top_k` is a fixed number of slots, so whatever moves up pushes something else down. That pays off only if the topic is right more often than the distance ranking is wrong in close calls. Here it is not: the extracted topic is often wrong and changes between runs, and the embeddings already rank the right article first in almost every case. The boost could become useful:
+
+- with a **more reliable topic**: a better extraction model, or a topic the user picks from a list;
+- with **vaguer questions**, where many articles lie close together and a hint decides more often. Generated questions name the company and the figure, which flatters similarity search; real questions from the UI will be harder.
+
+It stays available (`--topic-mode boost`) to retest when either changes.
 
 ## 7. Pitfalls
 

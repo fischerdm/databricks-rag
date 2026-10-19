@@ -17,7 +17,7 @@ This document explains how the RAG backend answers a question, what each compone
 
 ## 1. The approach in one paragraph
 
-An LLM on its own knows nothing about our documents. **Retrieval-Augmented Generation (RAG)** fixes that in two steps: first *retrieve* the few passages from our corpus most relevant to the question, then *generate* an answer by giving the LLM the question together with those passages and telling it to answer only from them. Retrieval is done by similarity search over embeddings. Because similarity search cannot reliably honour hard constraints like 'on October 19' or 'only takeover news', this project adds a third step in front: an LLM first **extracts structured filters** (date range, topic) from the question, and the database applies them before ranking by similarity.
+An LLM on its own knows nothing about our documents. **Retrieval-Augmented Generation (RAG)** fixes that in two steps: first *retrieve* the few passages from our corpus most relevant to the question, then *generate* an answer by giving the LLM the question together with those passages and telling it to answer only from them. Retrieval is done by similarity search over embeddings. Because similarity search cannot reliably honour hard constraints like 'on October 19' or 'only takeover news', this project adds a third step in front: an LLM first **extracts structured filters** (date range, topic) from the question, and the database applies them before ranking by similarity. By default only the extracted dates are applied: the evaluation showed that the extracted topic is too often wrong to filter by (see [`TOPIC_MODE`](#why-the-extracted-topic-is-not-used-by-default)).
 
 ```
 question ──► extract filters ──► filtered similarity search ──► answer from retrieved passages
@@ -58,7 +58,7 @@ Indexing happens rarely: once for the Reuters corpus via the ingest script, and 
 flowchart TD
     Q[POST /query<br/>question + optional filters] --> E{auto_filters?}
     E -- yes --> X[extract_filters<br/>LLM + ExtractedFilters schema]
-    X --> M[merge_filters<br/>explicit values win]
+    X --> M[merge_filters<br/>explicit values win,<br/>extracted topic per TOPIC_MODE]
     E -- no --> S
     M --> S[search<br/>embed question, filtered nearest-neighbour query]
     S --> F{no results and<br/>extracted filters used?}
@@ -87,7 +87,7 @@ scripts/
 └── ingest_reuters.py  Downloads, parses and indexes Reuters-21578
 evals/
 ├── generate.py        Drafts golden-dataset cases from corpus articles
-├── checks.py          Rules for key facts, shared by generator and review UI; checks the dataset
+├── checks.py          Rules for key facts and question style, shared by generator and review UI; checks the dataset
 ├── duplicates.py      Suggests other versions of an expected article
 ├── evaluate.py        Scores retrieval against the golden dataset
 ├── review_app.py      Streamlit UI for reviewing the cases
@@ -105,6 +105,8 @@ The dependency direction is one-way: `main` → `services` → `schemas`/`config
 | `OPENAI_API_KEY` | — (required) | All OpenAI calls |
 | `CHAT_MODEL` | `gpt-4o-mini` | Writing the answer |
 | `FILTER_MODEL` | `gpt-5.4-nano` | Extracting filters from the question |
+| `TOPIC_MODE` | `off` | What an extracted topic does: `filter` (keep only that topic), `boost` (rank it higher) or `off` (ignore it). An explicit `topic` always filters |
+| `TOPIC_BOOST` | `0.05` | With `boost`: subtracted from the distance of chunks with the extracted topic |
 | `EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding chunks and questions |
 | `CHROMA_PATH` | `data/chroma` | Where the vector database lives on disk |
 | `COLLECTION_NAME` | `documents` | Chroma collection holding all chunks |
@@ -243,7 +245,7 @@ Strict mode requires every field to be present, so 'not mentioned' is expressed 
 3. **Single days are widened.** If the extracted range is exactly one day, `date_to` gets one extra day, because news about an event often appears the next day. (Explicit dates are never widened.)
 4. **Invalid combinations are dropped.** If the result would fail `SearchFilters` validation (e.g. the LLM returned a start after the end), only the explicit dates are kept; the topic still applies.
 
-Examples (extraction result: October 19–19, `crude`):
+Examples (extraction result: October 19–19, `crude`; with `TOPIC_MODE=filter`, so the extracted topic takes part. With the default `off`, `retrieve` removes the extracted topic before merging, and `crude` disappears from every row; an explicit topic still applies):
 
 | Request fields | Applied filters | Rule |
 |---|---|---|
@@ -303,11 +305,12 @@ Every `data` payload is JSON-encoded, including tokens. A raw newline inside a t
 
 1. `top_k` = request value or the `TOP_K` setting.
 2. `explicit` = the filter fields copied out of the request into a plain `SearchFilters`.
-3. `applied, chunks = retrieval.retrieve(question, top_k, explicit, auto_filters)`, which does steps 3a–3c:
-   1. If `auto_filters`: `applied = merge_filters(explicit, await extract_filters(question))`; otherwise `applied = explicit`.
-   2. `chunks = search(question, top_k, applied)`.
+3. `applied, boosted, chunks = retrieval.retrieve(question, top_k, explicit, auto_filters)`, which does steps 3a–3d:
+   1. If `auto_filters`: extract filters. Unless `TOPIC_MODE` is `filter`, remove the extracted topic; with `boost` (and no explicit topic) keep it aside as `boosted`. Then `applied = merge_filters(explicit, extracted)`. Without `auto_filters`, `applied = explicit`.
+   2. `chunks = search(question, top_k, applied)`; with a boosted topic, 5 × `top_k` candidates.
    3. **Fallback:** if no chunks were found *and* extracted filters were involved (`applied != explicit`), search again with `explicit` only. Extracted filters can be too narrow — e.g. a date outside the corpus — and an answer from unfiltered results is better than none.
-4. Return `stream_answer(question, chunks, applied)` as `text/event-stream`.
+   4. **Boost:** with a boosted topic, subtract `TOPIC_BOOST` from the distance of chunks with that label, re-sort and keep `top_k`.
+4. Return `stream_answer(question, chunks, applied)` as `text/event-stream`. The boosted topic is not shown to the client yet.
 
 The retrieval steps live in `services/retrieval.py` rather than in the endpoint so the evaluation scripts run exactly the same pipeline. Chroma and the embedding client are synchronous, so `search` runs via `asyncio.to_thread` to avoid blocking the async event loop while it waits on the network or disk.
 
@@ -334,15 +337,16 @@ POST /query
 1. **Validation.** FastAPI parses the body into `QueryInput`: `auto_filters = true`, no explicit filters, `top_k = 4` from settings.
 2. **Extraction.** `gpt-5.4-nano` returns
    `{"date_from": "1987-10-19", "date_to": "1987-10-19", "subject": "oil prices on October 19, 1987", "topic": "crude"}`.
-3. **Merge.** No explicit filters, so the extracted ones apply; the single day is widened → Oct 19–20, `crude`.
+3. **Merge.** `TOPIC_MODE` is `off`, so `crude` is dropped. No explicit filters, so the extracted dates apply; the single day is widened → Oct 19–20.
 4. **Filter.** `build_filter` gives
-   `{"$and": [{"date_int": {"$gte": 19871019}}, {"date_int": {"$lte": 19871020}}, {"topics": {"$contains": "crude"}}]}`.
-   Of 28,261 chunks, only oil articles from those two days remain as candidates.
+   `{"$and": [{"date_int": {"$gte": 19871019}}, {"date_int": {"$lte": 19871020}}]}`.
+   Of 28,261 chunks, only articles from those two days remain as candidates.
 5. **Search.** The question is embedded; Chroma returns the 4 closest candidates:
    - 'AMPLE SUPPLIES LIMIT U.S. STRIKE'S OIL PRICE IMPACT' (Oct 19)
    - 'UNOCAL RAISES CRUDE OIL POSTED PRICES' (Oct 19)
    - 'TEXACO UNIT RAISES CRUDE OIL PRICES' (Oct 20)
    - 'EX-ARCO CHIEF SEES ENERGY CRISIS BY 1990' (Oct 19)
+   These are the same four as with the `crude` filter (`TOPIC_MODE=filter`): within two days, similarity alone finds the oil articles. The date does the work.
 6. **Answer.** The chunks are numbered `[1]`–`[4]` in the prompt and the answer streams back:
    > On October 19, 1987, oil prices initially rose following the U.S. strike on an Iranian oil platform but then fell due to ample supplies of OPEC crude, which limited and reversed the price gains. … [1]
 
@@ -360,6 +364,11 @@ Pydantic defines the shape once and gives three things from it: the JSON schema 
 With structured outputs, the `topic` field is constrained to the 119 codes. This prevents invented codes, but has a trap found in testing: `gpt-4o-mini` mapped 'OPEC' to `oilseed`. Without the constraint it wanted to write `"opec"` or `"oil output"` — not valid codes — and constrained decoding completed the word to the nearest code that fitted. A *wrong* topic is worse than none: oilseed articles exist, so the empty-result fallback never triggers. Two measures:
 - **The `subject` field before `topic`** lets the model state the subject in its own words before committing to a code.
 - **A newer model.** All `gpt-5.4` models tested got all 10 test questions right, including OPEC. `gpt-5.4-nano` was the fastest (0.9 s for 10 parallel calls) and is the default.
+
+### Why the extracted topic is not used by default
+A filter is all or nothing: when the extracted topic is wrong, the right article cannot be found at any rank. On the golden dataset the topic filter cost 10 points of hit@4 (86% vs 94% with dates only), and since the extraction gives different topics on identical runs, the scores also varied between runs. Dates are copied from the question and rarely wrong. So `TOPIC_MODE` defaults to `off`.
+
+`boost` was tested as a middle way: the topic becomes a second ranking signal added to the distance instead of a hard filter. It changed single cases in both directions and showed no reliable gain, because the extracted topic is right too rarely. It stays available for a more reliable topic source, e.g. a better model or a topic the user picks ([evaluation.md](evaluation.md#2026-10-19-topic-as-filter-boost-or-not-at-all)).
 
 ### Why explicit filters win
 A field in the request is a deliberate choice, typically from a UI control. An extracted filter is the LLM's interpretation of text. When they disagree, the deliberate choice wins; the `filters` event shows the client what was actually used.
@@ -379,8 +388,8 @@ A list allows exact membership checks with `$contains`. With a comma-separated s
 ## 7. Known limitations
 
 - **Documents from `/index` have no `date_int` or `topics`.** Any date or topic filter excludes them. With `auto_filters` on, a question that mentions a date will therefore skip them, unless the filtered search returns nothing and the fallback kicks in.
-- **The fallback only triggers on zero results.** If extracted filters are wrong but still match something, the wrong results are used. The `filters` event makes this visible to the client. The evaluation measured the effect: a wrong topic is the main source of retrieval misses ([evaluation.md](evaluation.md#6-findings)).
-- **One topic per question.** 'Oil and gold prices' can only be filtered by one of the two; the extraction picks one, or none.
+- **The fallback only triggers on zero results.** If extracted filters are wrong but still match something, the wrong results are used. The `filters` event makes this visible to the client. The evaluation measured the effect: with `TOPIC_MODE=filter`, a wrong topic was the main source of retrieval misses, which is why the default is `off` ([evaluation.md](evaluation.md#6-findings)). Wrong dates still hit this: a question about an event period ('exports in Jan/Feb') gets a filter on the publication date, which excludes the article published in March.
+- **One topic per question.** 'Oil and gold prices' can only be filtered (or boosted) by one of the two; the extraction picks one, or none.
 - **The extraction prompt is corpus-specific.** Date range, topic list and examples are written for Reuters-21578. A different corpus needs its own `topics.py` and prompt.
 - **Similarity search ranks by meaning, not by importance.** Within the filtered candidates, the 'closest' chunks are not necessarily the most informative.
 - **Extra latency and cost per query.** Extraction adds one LLM call (about a second) before the search can start.
