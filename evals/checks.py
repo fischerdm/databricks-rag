@@ -23,6 +23,8 @@ from pathlib import Path
 
 # Words that carry no answer on their own: function words, question words and company suffixes,
 # so that "Volkswagen AG" counts as repeating a question that names "Volkswagen".
+# Not formatted: the formatter would put each word on its own line.
+# fmt: off
 STOPWORDS = {
     "a", "an", "and", "are", "as", "at", "be", "by", "did", "do", "does", "for", "from", "has",
     "have", "how", "in", "into", "is", "it", "its", "much", "many", "of", "on", "or", "over",
@@ -30,11 +32,15 @@ STOPWORDS = {
     "who", "why", "will", "with",
     "ag", "co", "corp", "corporation", "inc", "ltd", "nv", "plc", "sa", "group", "company",
 }
+# fmt: on
 
 # A date or period in a question: a month or weekday ('on April 7', 'Jan/Feb'), a year, or a
 # relative period ('third-quarter', 'the 53 weeks to'). Month names are matched capitalised only,
 # so the verbs 'may' and 'march' do not count; a name such as 'May Department Stores' still does.
-MONTHS = r"Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|Sept?(?:ember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?"
+MONTHS = (
+    r"Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?"
+    r"|Sept?(?:ember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?"
+)
 WEEKDAYS = r"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday"
 PERIODS = r"(?i:quarter|qtr|weeks?|months?|(?:this|last|next|fiscal) year|(?:first|second) half|today|yesterday)"
 DATE_PATTERN = re.compile(rf"\b(?:{MONTHS}|{WEEKDAYS}|19\d\d|{PERIODS})\b")

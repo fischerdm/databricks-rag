@@ -95,8 +95,7 @@ def print_report(summary: dict, by_style: dict[str, dict], results: list[dict], 
         if not s["n"]:
             return f"{label:<10} {0:>4}"
         return (
-            f"{label:<10} {s['n']:>4} {s['hit@1']:>7.0%} {s['hit@k']:>7.0%} "
-            f"{s['mrr']:>6.2f} {s['filtered_out']:>9.0%}"
+            f"{label:<10} {s['n']:>4} {s['hit@1']:>7.0%} {s['hit@k']:>7.0%} {s['mrr']:>6.2f} {s['filtered_out']:>9.0%}"
         )
 
     print(f"\n{'':<10} {'n':>4} {'hit@1':>7} {f'hit@{top_k}':>7} {'MRR':>6} {'filt.out':>9}")
@@ -124,7 +123,9 @@ async def main() -> None:
     parser.add_argument("--top-k", type=int, default=settings.top_k, help="chunks retrieved per question")
     parser.add_argument("--no-auto-filters", action="store_true", help="search without filter extraction")
     parser.add_argument(
-        "--topic-mode", choices=["filter", "boost", "off"], default=settings.topic_mode,
+        "--topic-mode",
+        choices=["filter", "boost", "off"],
+        default=settings.topic_mode,
         help="how an extracted topic is used",
     )
     parser.add_argument("--topic-boost", type=float, default=settings.topic_boost, help="distance bonus with boost")

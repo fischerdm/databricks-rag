@@ -66,11 +66,15 @@ def main() -> None:
         print(f"{case['id']}: {case['question']}")
         for c in complete:
             metadata = articles[c["document_id"]][1]
-            print(f"  + {c['document_id']} ({metadata.get('date', '?')}, distance {c['distance']:.3f} "
-                  f"to {c['similar_to']}): {metadata['title']}")
+            print(
+                f"  + {c['document_id']} ({metadata.get('date', '?')}, distance {c['distance']:.3f} "
+                f"to {c['similar_to']}): {metadata['title']}"
+            )
         n_suggested += len(complete)
-    print(f"\n{n_suggested} candidates contain all key facts and are worth a look in the review UI. "
-          f"{n_hidden} similar articles lack key facts and are not listed.")
+    print(
+        f"\n{n_suggested} candidates contain all key facts and are worth a look in the review UI. "
+        f"{n_hidden} similar articles lack key facts and are not listed."
+    )
 
 
 if __name__ == "__main__":
