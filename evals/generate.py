@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field, ValidationError, ValidationInfo, field_va
 
 from app.services import vector
 from app.services.llm import _client
-from evals.checks import fact_problem
+from evals.checks import fact_problem, style_problem
 from scripts.ingest_reuters import download_archive, iter_articles
 
 DEFAULT_OUT = Path("evals/golden.jsonl")
@@ -46,8 +46,8 @@ MAX_ATTEMPTS = 3
 class GeneratedCase(BaseModel):
     """The LLM's reply. The JSON schema fixes its shape; the validator checks the content.
 
-    The content rules need the article, passed as validation context. OpenAI's SDK parses the
-    reply without context, so the check runs in a second, explicit validation step.
+    The content rules need the article and the style, passed as validation context. OpenAI's SDK
+    parses the reply without context, so the check runs in a second, explicit validation step.
     """
 
     question: str = Field(description="The question a user would type")
@@ -55,6 +55,13 @@ class GeneratedCase(BaseModel):
     key_facts: list[str] = Field(
         description="1-3 short facts the answer adds beyond the question, copied verbatim from the article"
     )
+
+    @field_validator("question")
+    @classmethod
+    def check_question(cls, question: str, info: ValidationInfo) -> str:
+        if info.context and (problem := style_problem(question, info.context["style"])):
+            raise ValueError(f"the question {problem}")
+        return question
 
     @field_validator("key_facts")
     @classmethod
@@ -138,7 +145,7 @@ def sample_articles(n: int, seed: int, exclude: set[str]) -> list[tuple[str, str
 
 
 async def generate_case(article: tuple[str, str, dict], style: Style, model: str) -> GeneratedCase | None:
-    """Ask for a case; if it breaks the key-fact rules, send the errors back and ask again.
+    """Ask for a case; if it breaks the style or key-fact rules, send the errors back and ask again.
 
     Returns None if the reply still breaks the rules after MAX_ATTEMPTS.
     """
@@ -153,14 +160,14 @@ async def generate_case(article: tuple[str, str, dict], style: Style, model: str
         )
         draft = completion.choices[0].message.parsed
         try:
-            return GeneratedCase.model_validate(draft.model_dump(), context={"article": content})
+            return GeneratedCase.model_validate(draft.model_dump(), context={"article": content, "style": style})
         except ValidationError as exc:
             problems = "; ".join(error["msg"].removeprefix("Value error, ") for error in exc.errors())
             messages += [
                 {"role": "assistant", "content": draft.model_dump_json()},
                 {"role": "user", "content": f"Your answer breaks the rules: {problems}. Answer again, fixing this."},
             ]
-    print(f"Skipped {doc_id}: key facts still invalid after {MAX_ATTEMPTS} attempts ({problems}).")
+    print(f"Skipped {doc_id}: still breaks the rules after {MAX_ATTEMPTS} attempts ({problems}).")
     return None
 
 

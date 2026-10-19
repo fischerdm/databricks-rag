@@ -1,4 +1,4 @@
-"""Rules a key fact must follow, shared by the generator, the review UI and dataset checks.
+"""Rules a case must follow, shared by the generator, the review UI and dataset checks.
 
 A key fact is something a correct answer must contribute beyond the question, copied verbatim
 from the article so it can be checked by string matching:
@@ -9,6 +9,8 @@ Whether a fact is essential cannot be checked automatically; that is left to rev
 Every expected article should contain every key fact. Otherwise retrieval would count that
 article as a hit while an answer built from it could not contain the fact. When they disagree,
 a reviewer decides which side is wrong: the article (remove it) or the fact (shorten it).
+
+The style describes the question: 'dated' if it names a date or period, 'undated' if not.
 
 Usage, to check the whole dataset:
     python -m evals.checks [--golden evals/golden.jsonl]
@@ -28,6 +30,14 @@ STOPWORDS = {
     "who", "why", "will", "with",
     "ag", "co", "corp", "corporation", "inc", "ltd", "nv", "plc", "sa", "group", "company",
 }
+
+# A date or period in a question: a month or weekday ('on April 7', 'Jan/Feb'), a year, or a
+# relative period ('third-quarter', 'the 53 weeks to'). Month names are matched capitalised only,
+# so the verbs 'may' and 'march' do not count; a name such as 'May Department Stores' still does.
+MONTHS = r"Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|Sept?(?:ember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?"
+WEEKDAYS = r"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday"
+PERIODS = r"(?i:quarter|qtr|weeks?|months?|(?:this|last|next|fiscal) year|(?:first|second) half|today|yesterday)"
+DATE_PATTERN = re.compile(rf"\b(?:{MONTHS}|{WEEKDAYS}|19\d\d|{PERIODS})\b")
 
 
 def normalize(text: str) -> str:
@@ -56,6 +66,16 @@ def fact_problem(fact: str, article: str, question: str) -> str | None:
     return None
 
 
+def style_problem(question: str, style: str) -> str | None:
+    """Why a question does not match its style, or None if it does."""
+    mentions = DATE_PATTERN.findall(question)
+    if style == "undated" and mentions:
+        return f"is undated but mentions {', '.join(repr(m) for m in mentions)}"
+    if style == "dated" and not mentions:
+        return "is dated but mentions no date or period"
+    return None
+
+
 def missing_facts(facts: list[str], article: str) -> list[str]:
     """The key facts that do not appear verbatim in this article."""
     text = normalize(article)
@@ -65,6 +85,8 @@ def missing_facts(facts: list[str], article: str) -> list[str]:
 def case_problems(case: dict, texts: dict[str, str]) -> list[str]:
     """Every rule a case breaks, given the texts of its expected articles keyed by id."""
     problems = [f"unknown article {doc_id}" for doc_id in case["expected_doc_ids"] if doc_id not in texts]
+    if problem := style_problem(case["question"], case["style"]):
+        problems.append(f"question {problem}")
     if not case.get("key_facts"):
         problems.append("no key facts")
     for fact in case.get("key_facts", []):

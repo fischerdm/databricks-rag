@@ -44,7 +44,7 @@ So far the evaluation scores **retrieval**: does the search find the article tha
 | `question` | What a user would type |
 | `expected_doc_ids` | Articles that answer the question. Retrieval is scored against these |
 | `reference_answer`, `key_facts` | A correct answer and the facts it must contain. Not used yet; for answer scoring later |
-| `style` | Describes the question, not the article: `dated` if it mentions a date or period ('on March 24', 'in Jan/Feb 1987'), `undated` if it mentions none |
+| `style` | Describes the question, not the article: `dated` if it mentions a date or period ('on March 24', 'in Jan/Feb 1987', 'third-quarter'), `undated` if it mentions none. Checked automatically |
 | `source_title`, `source_date` | The article the question was generated from, to make review easier |
 | `reviewed` | Whether a person has checked the case |
 | `notes` | Optional. What the review decided and why, e.g. 'Added reuters-3065: same story, same day' |
@@ -75,7 +75,7 @@ The trick is that **the article the question was written from is the expected an
 | As short as possible | 'most of Lazere's loan portfolio' | 'loan portfolio' | A correct answer may word the rest differently ('most of its loan portfolio') |
 | Essential | the group total '96,000 tonnes' for a question about Malaysia's and Indonesia's quotas | (left out) | A good answer that leaves it out would be counted as wrong |
 
-**Shape versus content.** The reply's *shape* (a question, a reference answer, a list of key facts) is enforced by OpenAI's structured outputs, from the Pydantic model `GeneratedCase`. The *content* rules need the article, which a JSON schema cannot express, so a Pydantic validator checks them after parsing, with the article passed as validation context. The rules 'verbatim' and 'never repeats the question' are checked by [evals/checks.py](../evals/checks.py); if a reply breaks one, the generator sends the error back to the LLM ('key fact "Aldo Hofmeister" only repeats the question') and asks again, up to three attempts, and skips the article if it still fails. Whether a fact is as short as possible and essential cannot be checked automatically; that stays with the prompt and the review. The same check marks key facts ✓ or ✗ in the review UI.
+**Shape versus content.** The reply's *shape* (a question, a reference answer, a list of key facts) is enforced by OpenAI's structured outputs, from the Pydantic model `GeneratedCase`. The *content* rules need the article, which a JSON schema cannot express, so a Pydantic validator checks them after parsing, with the article passed as validation context. The rules 'verbatim' and 'never repeats the question' are checked by [evals/checks.py](../evals/checks.py); if a reply breaks one, the generator sends the error back to the LLM ('key fact "Aldo Hofmeister" only repeats the question') and asks again, up to three attempts, and skips the article if it still fails. Whether a fact is as short as possible and essential cannot be checked automatically; that stays with the prompt and the review. The same check marks key facts ✓ or ✗ in the review UI. The question's style is validated the same way: an `undated` question that names a month, year, quarter or similar period is sent back, and so is a `dated` one that names none.
 
 The 'repeats the question' check rejects a fact only if *all* its words are in the question (ignoring function words and company suffixes such as 'Corp'), so '30.50 dlrs per share' passes for a question about the price per share: '30.50' is new.
 
@@ -100,7 +100,7 @@ For each case with `"reviewed": false`:
 - **Add equally good articles to `expected_doc_ids`.** Reuters often has several versions of one story, such as a short highlights item and a detailed table. If the second one is retrieved, that is not a miss. See [deciding on another article](#deciding-on-another-article) below.
 - **Check the reference answer** against the article: correct, complete, only facts from the article.
 - **Check the key facts** against the four rules above. The UI marks each one ✓ or ✗ for 'verbatim' and 'never repeats the question'; whether it is as short as possible and essential is your call. Remove facts a good answer could leave out.
-- **Check the style:** an `undated` question must not mention a date or period such as 'Jan/Feb'.
+- **Check the style:** an `undated` question must not mention a date or period such as 'Jan/Feb'. This is checked automatically; if you rewrite a question, fix the style to match.
 - **Never change a case to make a system failure go away.** If the right article was excluded by a wrong filter, the case is correct and the system is not.
 - Set `"reviewed": true`, and write what you decided in `notes` if you changed anything.
 
@@ -300,6 +300,46 @@ The search itself is deterministic: same question, same embedding, same ranking.
 - Review UI and checklist: the same check, and the four rules in 'How to review'.
 
 Retrieval scores are unaffected: key facts are only used for answer scoring, which comes next.
+
+### 2026-10-19: reviewed baseline
+
+**Setup.** All 50 cases reviewed. `top_k` 4, `text-embedding-3-small`, `gpt-5.4-nano` for filter extraction, full corpus indexed. Filter extraction varies between runs, so the auto-filter configuration was run five times; plain search is deterministic and was run once. This is the reference point for the filter fix.
+
+**Correction: seven questions had the wrong style.** They were marked `undated` but name a date or period: 'for 1987' (q0008, q0035), 'in Jan/Feb 1987' (q0033), 'the April G-7 statement' (q0021), 'fourth-quarter' / 'first quarter' (q0029, q0044), 'the September … housing starts' (q0036). The generator asked for undated questions but never checked the result, and neither did the review UI or `evals.checks`, which covered only the key facts. All seven are now `dated`. The style rule is now checked by [evals/checks.py](../evals/checks.py) in both directions (an undated question names no date or period, a dated one names one), and the generator sends a violation back to the LLM like a key-fact error. This moves cases between the style rows and changes no overall score. It also corrects the first entry: the undated row there contained dated questions, including the filtered-out q0033.
+
+Filter extraction itself ignored most of these periods: only q0021 ('April') and q0033 ('Jan/Feb') got a date filter. That is right, since 'fourth-quarter' or 'for 1987' are not publication dates, but it means the dated row mixes two kinds of question: those with a publication date the filter can use, and those with a period it cannot.
+
+| | n | hit@1 | hit@4 | MRR | filt.out |
+|---|---|---|---|---|---|
+| **With auto filters**, mean of 5 runs (min–max) | 50 | 82% (80–84) | 86% (84–88) | 0.83 (0.82–0.86) | 11% (8–14) |
+| dated | 30 | 89% (87–90) | 92% (90–93) | 0.90 (0.88–0.92) | 5% (3–10) |
+| undated | 20 | 71% (70–75) | 76% (75–80) | 0.73 (0.72–0.77) | 19% (15–20) |
+| **Without auto filters** | 50 | **88%** | **96%** | **0.92** | 0% |
+| dated | 30 | 90% | 97% | 0.93 | 0% |
+| undated | 20 | 85% | 95% | 0.89 | 0% |
+
+Reviewing the remaining 37 cases changed no score: plain search gives the same 88 / 96 / 0.92 as after the review of the misses. Among the 37 cases the system already ranked first, the review changed no question and added a duplicate to only one (q0044). This is what pooling predicts (see 'Start with the misses').
+
+**Which cases the filters excluded**, over the five runs:
+
+| Case | Excluded in | Inferred filter | Article's labels / date |
+|---|---|---|---|
+| q0015 Cehave NV Veghel / EC levy | 5 of 5 | `grain` | `meal-feed` |
+| q0017 Bank of British Columbia payout | 5 of 5 | `acq` | `earn` |
+| q0033 Argentina beef exports Jan/Feb | 5 of 5 | Jan–Feb, `trade` | published Mar 11; `carcass`, `livestock` |
+| q0024 Nippon Mining / Conoco | 4 of 5 | `acq` | `crude` |
+| q0048 Abidjan port cargo | 4 of 5 | `trade` | `ship` |
+| q0014 California Micro / Grumman pact | 2 of 5 | `acq` | `strategic-metal` |
+| q0010 K mart dividend and split | 1 of 5 | `acq` | `earn` |
+| q0027 Saudi Arabia / Petrobras credit | 1 of 5 | `instal-debt` | `crude` |
+
+q0048 and q0010 were already excluded in some of the earlier runs, but the previous entries did not list them.
+
+**Finding 1: the topic filter causes every exclusion except one date.** Of 27 exclusions over five runs, 26 come from a wrong topic alone. The one date failure, q0033, is the known pitfall that filters match the publication date, not the event date. Its topic was wrong too, so dropping the topic alone would not bring it back. A topic was inferred in 79% of all case runs (198 of 250), so the filter is active almost every time.
+
+**Finding 2: the topic filter helps in three cases.** In q0025 (Allis-Chalmers) and q0026 (Dauphin Deposit), the inferred `acq` moved the right article from rank 2 to rank 1 in all five runs. In q0021 (G-7 statement), `trade` brought the article from not retrieved to rank 1, but in only one of five runs.
+
+**The target for a fix.** Plain search sets the bar: hit@4 96%, hit@1 88%. A fix succeeds if it closes the 10-point hit@4 gap without losing the hit@1 gains from Finding 2. Each candidate needs several runs too, because its filter extraction varies as well.
 
 ## 7. Pitfalls
 
