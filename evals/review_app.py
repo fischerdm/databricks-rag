@@ -39,13 +39,42 @@ def articles() -> dict[str, tuple[str, dict]]:
     return {doc_id: (content, metadata) for doc_id, content, metadata in iter_articles()}
 
 
-def latest_run(auto_filters: bool) -> tuple[str, dict[str, dict]] | None:
-    """Results of the newest evaluation run with this auto_filters setting, keyed by case id."""
+def load_runs(auto_filters: bool) -> list[tuple[str, dict[str, dict]]]:
+    """All evaluation runs with this auto_filters setting, newest first, results keyed by case id."""
+    runs = []
     for path in sorted(RUNS_DIR.glob("*-retrieval.json"), reverse=True):
         run = json.loads(path.read_text())
         if run["config"]["auto_filters"] == auto_filters:
-            return path.name, {r["id"]: r for r in run["results"]}
-    return None
+            runs.append((path.name, {r["id"]: r for r in run["results"]}))
+    return runs
+
+
+def across_runs(results: list[dict]) -> str:
+    """One line summarizing how a case did over several runs, e.g. 'rank 1 in 3 of 4 runs'."""
+    n = len(results)
+    parts = [f"rank 1 in {sum(r['rank'] == 1 for r in results)} of {n} run{'s' if n > 1 else ''}"]
+    if lower := [r["rank"] for r in results if r["rank"] and r["rank"] > 1]:
+        parts.append(f"lower rank in {len(lower)} ({', '.join(map(str, lower))})")
+    if filtered := [r for r in results if r["filtered_out"]]:
+        topics = sorted({r["applied_filters"].get("topic") or "dates" for r in filtered})
+        parts.append(f"filtered out in {len(filtered)} ({', '.join(topics)})")
+    if missed := sum(r["rank"] is None and not r["filtered_out"] for r in results):
+        parts.append(f"not retrieved in {missed}")
+    return "; ".join(parts)
+
+
+def filter_check(applied: dict, metadata: dict) -> str:
+    """Compare the applied filters with an article's date and labels, e.g. 'topic acq vs earn ✗'."""
+    parts = []
+    date = metadata.get("date")
+    date_from, date_to = applied.get("date_from"), applied.get("date_to")
+    if date_from or date_to:
+        ok = bool(date) and (not date_from or date >= date_from) and (not date_to or date <= date_to)
+        parts.append(f"date {date_from or '…'} – {date_to or '…'} vs {date or 'none'} {'✓' if ok else '✗'}")
+    if topic := applied.get("topic"):
+        labels = metadata.get("topics", [])
+        parts.append(f"topic {topic} vs {', '.join(labels) or 'none'} {'✓' if topic in labels else '✗'}")
+    return " · ".join(parts) or "no filters applied"
 
 
 def normalize(text: str) -> str:
@@ -130,11 +159,12 @@ def add_expected(cid: str, doc_id: str) -> None:
 # --- layout --------------------------------------------------------------------------------
 
 cases = load_cases(GOLDEN)
-runs = {label: latest_run(auto) for label, auto in (("with auto filters", True), ("without auto filters", False))}
+runs = {label: load_runs(auto) for label, auto in (("with auto filters", True), ("without auto filters", False))}
 
 
 def is_miss(cid: str) -> bool:
-    return any(run and cid in run[1] and run[1][cid]["rank"] != 1 for run in runs.values())
+    """Not ranked first in the latest run of either setting."""
+    return any(r and cid in r[0][1] and r[0][1][cid]["rank"] != 1 for r in runs.values())
 
 
 with st.sidebar:
@@ -157,8 +187,8 @@ with st.sidebar:
     labels = {c["id"]: f"{'✅' if c.get('reviewed') else '⬜'} {c['id']}{'  ⚠️ miss' if is_miss(c['id']) else ''}" for c in shown}
     st.selectbox("Case", ids, key="case_id", format_func=labels.get)
     st.caption("✅ reviewed · ⚠️ not ranked first in a latest run")
-    for label, run in runs.items():
-        st.caption(f"Latest run {label}: {run[0] if run else 'none'}")
+    for label, label_runs in runs.items():
+        st.caption(f"Runs {label}: {len(label_runs)}, latest {label_runs[0][0] if label_runs else 'none'}")
 
 case = next(c for c in cases if c["id"] == state.case_id)
 cid = case["id"]
@@ -168,6 +198,18 @@ next_id = ids[position + 1] if position + 1 < len(ids) else None
 
 if flash := state.pop("flash", None):
     getattr(st, flash[0])(flash[1])
+
+with st.expander("How to review: judge the case, not the system", expanded=not case.get("reviewed")):
+    st.markdown(
+        "Check the **case**: is the question realistic, specific and about one thing? Does the expected "
+        "article answer it? Is the reference answer correct and complete? Is every key fact in the article "
+        "and essential? Does the style match?\n\n"
+        "The **run results** below only help with two decisions: whether a retrieved article answers the "
+        "question equally well (then add it to the expected articles), and whether a miss is the system's "
+        "fault. A wrong filter or a topic that differs from the article's Reuters labels is the system's "
+        "fault: **never change a case because of it**, and no note is needed. The Reuters labels are fixed "
+        "corpus data; they are not reviewed."
+    )
 
 st.subheader(f"{cid} · {'reviewed' if case.get('reviewed') else 'not reviewed'}")
 left, right = st.columns([2, 3], gap="large")
@@ -205,27 +247,34 @@ with right:
             st.markdown(highlight(content, facts), unsafe_allow_html=True)
 
 st.divider()
-st.markdown("#### Latest evaluation runs")
+st.markdown("#### Evaluation runs")
 st.caption("The articles retrieved instead are the candidates for equally good answers: add them if they answer the question as well.")
 run_columns = st.columns(len(runs), gap="large")
 expected_now = set(lines(state[f"expected_{cid}"]))
-for column, (label, run) in zip(run_columns, runs.items()):
+for column, (label, label_runs) in zip(run_columns, runs.items()):
     with column:
         st.markdown(f"**{label}**")
-        result = run[1].get(cid) if run else None
-        if result is None:
-            st.caption("Not in this run.")
+        results = [run[cid] for _, run in label_runs if cid in run]
+        if not results:
+            st.caption("Not in any run.")
             continue
+        st.markdown(f"All runs: {across_runs(results)}")
+
+        result = results[0]
         rank = f"rank {result['rank']}" if result["rank"] else "not retrieved"
         reason = " · filtered out by the applied filters" if result["filtered_out"] else ""
-        st.markdown(f"{'✅' if result['rank'] == 1 else '⚠️'} {rank}{reason}")
-        st.caption(f"Filters: {result['applied_filters'] or 'none'}")
+        st.markdown(f"Latest run: {'✅' if result['rank'] == 1 else '⚠️'} {rank}{reason}")
+        if result["applied_filters"]:
+            for doc_id in result["expected_doc_ids"]:
+                if doc_id in articles():
+                    st.caption(f"Filters vs {doc_id}: {filter_check(result['applied_filters'], articles()[doc_id][1])}")
         for doc_id in dict.fromkeys(hit["document_id"] for hit in result["retrieved"]):
             if doc_id not in articles():
                 continue
             content, metadata = articles()[doc_id]
             mark = "✓ expected · " if doc_id in expected_now else ""
-            with st.expander(f"{mark}{doc_id} · {metadata.get('date', '?')} · {metadata['title']}"):
+            topics = ", ".join(metadata.get("topics", [])) or "no topics"
+            with st.expander(f"{mark}{doc_id} · {metadata.get('date', '?')} · {topics} · {metadata['title']}"):
                 st.markdown(highlight(content, facts), unsafe_allow_html=True)
                 if doc_id not in expected_now:
                     st.button("Add to expected", key=f"add_{label}_{cid}_{doc_id}",
