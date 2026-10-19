@@ -104,6 +104,12 @@ For each case with `"reviewed": false`:
 - **Never change a case to make a system failure go away.** If the right article was excluded by a wrong filter, the case is correct and the system is not.
 - Set `"reviewed": true`, and write what you decided in `notes` if you changed anything.
 
+After editing `golden.jsonl` by hand, check all cases against the rules (exit code 1 on violations, so it can run in CI):
+
+```bash
+.venv/bin/python -m evals.checks
+```
+
 **Start with the misses.** A case the system already ranks first rarely hides a problem with `expected_doc_ids`. For a miss, the articles retrieved instead are the candidates for equally good answers, so you only judge those few, never the whole corpus. Search benchmarks have been built this way for decades ('pooling'). An equally good article that no run ever retrieves stays unknown; it does not distort the scores, and it shows up for review once a better version of the system retrieves it.
 
 #### Deciding on another article
@@ -115,6 +121,14 @@ In the review UI, the articles a run retrieved are listed under 'Evaluation runs
 | It is the same story again: an update, a repeat, a short version | It is only on the same subject |
 | It contains the facts of the reference answer. Many highlighted key facts are a strong sign | It answers only part of the question |
 | A user would not care which of the two they got | It gives different figures, or another source's view |
+
+**Every expected article must contain every key fact.** Both fields describe the correct answer: `expected_doc_ids` for retrieval scoring, `key_facts` for answer scoring. If an expected article lacked a key fact, retrieving it would count as a hit while an answer built from it could not contain the fact. When the two disagree, one of them is wrong, and you decide which: remove the article if it does not fully answer the question, or shorten the fact if it is worded too specifically ('2.5 percent' versus '2.5 pct' → '2.5'). The review UI shows `key facts n/m` for every article and warns on saving; nothing is changed automatically.
+
+**Duplicates no run retrieved.** The candidates from the runs only cover what a run happened to retrieve. The review UI also lists **possible duplicates** of the expected articles: articles whose first chunk lies within distance 0.15 of an expected article's first chunk. Known duplicates were at most 0.115 apart, related but different stories at least 0.197. Distance alone misleads for recurring reports: last week's cocoa purchases or another quarter's housing starts lie as close as a true duplicate but carry other figures. So candidates containing all key facts are shown, and the others are collapsed. For an overview of all cases:
+
+```bash
+.venv/bin/python -m evals.duplicates
+```
 
 Examples from the first review:
 

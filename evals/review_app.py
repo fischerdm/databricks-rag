@@ -25,7 +25,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 os.chdir(ROOT)
 
-from evals.checks import fact_problem  # noqa: E402
+from evals.checks import case_problems, content_words, missing_facts  # noqa: E402
+from evals import duplicates  # noqa: E402
+from evals.duplicates import MAX_DISTANCE  # noqa: E402
 from evals.generate import DEFAULT_OUT as GOLDEN, load_cases  # noqa: E402
 from scripts.ingest_reuters import download_archive, iter_articles  # noqa: E402
 
@@ -48,7 +50,20 @@ Don't add it if:
 
 The column without auto filters is usually the better candidate list: no wrong filter has removed anything.
 
+**Key facts n/m** counts the case's key facts found verbatim in the article. An expected article should contain all of them.
+
 **Distance** is the cosine distance between the question and the article's closest chunk: lower is closer, and search returns the lowest. Compare distances within one question, not across questions. Two copies of one story usually have almost the same distance."""
+
+DUPLICATES_HELP = f"""**Other versions of the expected story**, found by comparing the articles' first chunks
+(distance at most {MAX_DISTANCE}). Reuters often sent a story twice: a repeat, an update, or a short
+highlights item next to a detailed table.
+
+Shown first: candidates that contain **all key facts**; add one if a user would be fully satisfied with it.
+
+Collapsed: similar articles that **lack key facts**. Usually the same kind of report with other figures,
+such as last week's purchases or another company's earnings table. These are rarely duplicates.
+
+Nothing is added automatically."""
 
 st.set_page_config(page_title="Golden dataset review", layout="wide")
 
@@ -181,7 +196,12 @@ def save(cid: str, reviewed: bool | None = None, next_id: str | None = None) -> 
         case["reviewed"] = reviewed
     write_cases(cases)
 
-    state.flash = ("success", f"Saved {cid}" + (" as reviewed" if reviewed else ""))
+    saved = f"Saved {cid}" + (" as reviewed" if reviewed else "")
+    texts = {doc_id: articles()[doc_id][0] for doc_id in expected}
+    if problems := case_problems(case, texts):
+        state.flash = ("warning", f"{saved}, but it breaks a rule: " + "; ".join(problems))
+    else:
+        state.flash = ("success", saved)
     if next_id:
         state.case_id = next_id
 
@@ -190,6 +210,38 @@ def add_expected(cid: str, doc_id: str) -> None:
     key = f"expected_{cid}"
     if doc_id not in lines(state[key]):
         state[key] = state[key].rstrip() + "\n" + doc_id
+
+
+def facts_label(facts: list[str], text: str) -> str:
+    """'key facts 2/2', or 'key facts 1/2 ✗' when the article lacks some."""
+    if not facts:
+        return "no key facts"
+    n_found = len(facts) - len(missing_facts(facts, text))
+    return f"key facts {n_found}/{len(facts)}{'' if n_found == len(facts) else ' ✗'}"
+
+
+@st.cache_data(show_spinner="Looking for similar articles...")
+def duplicate_candidates(expected: tuple[str, ...], facts: tuple[str, ...]) -> list[dict]:
+    texts = {doc_id: content for doc_id, (content, _) in articles().items()}
+    return duplicates.candidates({"expected_doc_ids": list(expected), "key_facts": list(facts)}, texts)
+
+
+def duplicate_expander(cid: str, candidate: dict, facts: list[str], nested: bool = False) -> None:
+    doc_id = candidate["document_id"]
+    content, metadata = articles()[doc_id]
+    header = (f"{doc_id} · {metadata.get('date', '?')} · distance {candidate['distance']:.3f} to "
+              f"{candidate['similar_to']} · {facts_label(facts, content)} · {metadata['title']}")
+    # Streamlit does not allow expanders inside expanders; nested candidates use a plain block.
+    container = st.container(border=True) if nested else st.expander(header)
+    with container:
+        if nested:
+            st.markdown(f"**{header}**")
+        st.markdown(highlight(content, facts), unsafe_allow_html=True)
+        missing = candidate["missing"]
+        st.button("Add to expected", key=f"dup_{cid}_{doc_id}", on_click=add_expected, args=(cid, doc_id),
+                  help=f"Lacks key facts {missing}: adding it will be flagged until the facts or the "
+                       "expected articles are adjusted." if missing else
+                       "Only if a user would be fully satisfied with this article alone. Click Save afterwards.")
 
 
 # --- layout --------------------------------------------------------------------------------
@@ -267,10 +319,16 @@ with left:
                       "as short as possible, verbatim from the article, essential. ✓/✗ below checks the "
                       "first three automatically.")
 
-    source_text = " ".join(articles()[d][0] for d in lines(state[f"expected_{cid}"]) if d in articles())
+    expected_ids = [d for d in lines(state[f"expected_{cid}"]) if d in articles()]
     for fact in lines(state[f"facts_{cid}"]):
-        problem = fact_problem(fact, source_text, state[f"question_{cid}"])
-        st.caption(f"✗ {fact}: {problem}" if problem else f"✓ {fact}")
+        lacking = [d for d in expected_ids if missing_facts([fact], articles()[d][0])]
+        if content_words(fact) <= content_words(state[f"question_{cid}"]):
+            st.caption(f"✗ {fact}: only repeats the question")
+        elif lacking:
+            st.caption(f"✗ {fact}: not verbatim in {', '.join(lacking)}. Shorten the fact, "
+                       "or remove the article if it does not give this fact")
+        else:
+            st.caption(f"✓ {fact}")
 
     st.text_area("Expected article ids (one per line)", key=f"expected_{cid}", height=90)
     st.text_area("Notes (what you changed and why)", key=f"notes_{cid}", height=70)
@@ -295,9 +353,29 @@ with right:
             continue
         content, metadata = articles()[doc_id]
         distance = f" · distance {distances[doc_id]:.3f}" if doc_id in distances else ""
-        header = f"Expected: {doc_id} · {metadata.get('date', '?')} · {', '.join(metadata.get('topics', [])) or 'no topics'}{distance}"
+        header = (f"Expected: {doc_id} · {metadata.get('date', '?')} · "
+                  f"{', '.join(metadata.get('topics', [])) or 'no topics'}{distance} · {facts_label(facts, content)}")
         with st.expander(header, expanded=i == 0):
             st.markdown(highlight(content, facts), unsafe_allow_html=True)
+
+    st.markdown("**Possible duplicates**", help=DUPLICATES_HELP)
+    try:
+        found = duplicate_candidates(tuple(expected_ids), tuple(facts))
+    except Exception as exc:  # the review works without suggestions, e.g. if the index is missing
+        found = []
+        st.caption(f"Duplicate search unavailable: {exc}")
+    complete = [c for c in found if not c["missing"]]
+    partial = [c for c in found if c["missing"]]
+    if not found:
+        st.caption(f"No other article within distance {MAX_DISTANCE} of an expected article.")
+    for c in complete:
+        duplicate_expander(cid, c, facts)
+    if partial:
+        with st.expander(f"{len(partial)} similar article(s) lacking key facts: likely a different report"):
+            st.caption("Same kind of story, other figures (e.g. last week's report). Add one only if it "
+                       "answers the question, and then shorten the key facts so it contains them.")
+            for c in partial:
+                duplicate_expander(cid, c, facts, nested=True)
 
 st.divider()
 st.markdown("#### Evaluation runs", help=ADD_HELP)
@@ -340,7 +418,8 @@ for column, (label, label_runs) in zip(run_columns, runs.items()):
             content, metadata = articles()[doc_id]
             mark = "✓ expected · " if doc_id in expected_now else ""
             topics = ", ".join(metadata.get("topics", [])) or "no topics"
-            with st.expander(f"{mark}{doc_id} · {metadata.get('date', '?')} · {topics} · distance {distance:.3f} · {metadata['title']}"):
+            with st.expander(f"{mark}{doc_id} · {metadata.get('date', '?')} · {topics} · distance {distance:.3f} · "
+                             f"{facts_label(facts, content)} · {metadata['title']}"):
                 st.markdown(highlight(content, facts), unsafe_allow_html=True)
                 if doc_id not in expected_now:
                     st.button("Add to expected", key=f"add_{label}_{cid}_{doc_id}",

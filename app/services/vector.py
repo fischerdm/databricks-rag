@@ -122,6 +122,25 @@ def document_distances(query: str, document_ids: list[str]) -> dict[str, float]:
     return distances
 
 
+def similar_documents(document_id: str, max_distance: float, limit: int = 10) -> dict[str, float]:
+    """Other documents whose first chunk lies within max_distance of this document's first chunk.
+
+    Comparing first chunks (title, date and opening paragraph) finds re-sent and rewritten
+    versions of one news story. Returns {document_id: distance}, closest first.
+    """
+    own = _collection().get(ids=[f"{document_id}:0"], include=["embeddings"])
+    if not len(own["ids"]):
+        return {}
+    result = _collection().query(
+        query_embeddings=[own["embeddings"][0]], n_results=limit + 1, where={"chunk": 0}
+    )
+    return {
+        metadata["document_id"]: distance
+        for metadata, distance in zip(result["metadatas"][0], result["distances"][0])
+        if metadata["document_id"] != document_id and distance <= max_distance
+    }
+
+
 def build_filter(filters: SearchFilters) -> dict | None:
     """Translate search filters into a Chroma `where` clause."""
     conditions = []

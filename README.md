@@ -64,6 +64,7 @@ A golden dataset is a fixed, reviewed set of questions with known right answers 
 ```bash
 .venv/bin/python -m evals.generate --n 50             # draft cases from corpus articles
 .venv/bin/streamlit run evals/review_app.py           # review them (pip install -r requirements-dev.txt)
+.venv/bin/python -m evals.checks                      # check all cases against the dataset rules
 .venv/bin/python -m evals.evaluate                    # score retrieval as /query runs it
 .venv/bin/python -m evals.evaluate --no-auto-filters  # compare: plain similarity search
 ```

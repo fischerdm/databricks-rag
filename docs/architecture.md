@@ -87,7 +87,8 @@ scripts/
 └── ingest_reuters.py  Downloads, parses and indexes Reuters-21578
 evals/
 ├── generate.py        Drafts golden-dataset cases from corpus articles
-├── checks.py          Rules for key facts, shared by generator and review UI
+├── checks.py          Rules for key facts, shared by generator and review UI; checks the dataset
+├── duplicates.py      Suggests other versions of an expected article
 ├── evaluate.py        Scores retrieval against the golden dataset
 ├── review_app.py      Streamlit UI for reviewing the cases
 └── golden.jsonl       The golden dataset
@@ -187,6 +188,8 @@ Everything that touches Chroma or the embedding API.
 **`document_metadata(document_ids)`** — the metadata of each indexed document, read from its first chunk; unknown ids are left out. The evaluation uses it to check which golden articles are indexed and whether the applied filters admit them.
 
 **`document_distances(query, document_ids)`** — the cosine distance from the query to the closest chunk of each given document, computed from the stored embeddings. It gives the same values search would, but ignores filters and `top_k`, so it also works for documents search did not return. The review UI uses it to show how far the expected article was from the question.
+
+**`similar_documents(document_id, max_distance)`** — other documents whose first chunk lies within `max_distance` of this document's first chunk, closest first. First chunks hold title, date and opening paragraph, so this finds re-sent and rewritten versions of a news story. The evaluation uses it to suggest duplicates of expected articles.
 
 **`build_filter(filters)`** — translates `SearchFilters` into Chroma's filter syntax:
 

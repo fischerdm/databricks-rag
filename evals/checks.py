@@ -5,9 +5,19 @@ from the article so it can be checked by string matching:
 - it appears in the article (ignoring case and line breaks);
 - it does not just repeat the question: at least one of its words is not in the question.
 Whether a fact is essential cannot be checked automatically; that is left to review.
+
+Every expected article should contain every key fact. Otherwise retrieval would count that
+article as a hit while an answer built from it could not contain the fact. When they disagree,
+a reviewer decides which side is wrong: the article (remove it) or the fact (shorten it).
+
+Usage, to check the whole dataset:
+    python -m evals.checks [--golden evals/golden.jsonl]
 """
 
+import argparse
 import re
+import sys
+from pathlib import Path
 
 # Words that carry no answer on their own: function words, question words and company suffixes,
 # so that "Volkswagen AG" counts as repeating a question that names "Volkswagen".
@@ -44,3 +54,51 @@ def fact_problem(fact: str, article: str, question: str) -> str | None:
     if content_words(fact) <= content_words(question):
         return "only repeats the question"
     return None
+
+
+def missing_facts(facts: list[str], article: str) -> list[str]:
+    """The key facts that do not appear verbatim in this article."""
+    text = normalize(article)
+    return [fact for fact in facts if normalize(fact) not in text]
+
+
+def case_problems(case: dict, texts: dict[str, str]) -> list[str]:
+    """Every rule a case breaks, given the texts of its expected articles keyed by id."""
+    problems = [f"unknown article {doc_id}" for doc_id in case["expected_doc_ids"] if doc_id not in texts]
+    if not case.get("key_facts"):
+        problems.append("no key facts")
+    for fact in case.get("key_facts", []):
+        if content_words(fact) <= content_words(case["question"]):
+            problems.append(f"key fact {fact!r} only repeats the question")
+    for doc_id in case["expected_doc_ids"]:
+        if doc_id in texts and (missing := missing_facts(case.get("key_facts", []), texts[doc_id])):
+            problems.append(f"{doc_id} lacks key facts {missing}: remove the article or shorten the facts")
+    return problems
+
+
+def main() -> None:
+    from evals.generate import DEFAULT_OUT, load_cases  # here: generate imports this module
+    from scripts.ingest_reuters import download_archive, iter_articles
+
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--golden", type=Path, default=DEFAULT_OUT, help="golden dataset (JSONL)")
+    args = parser.parse_args()
+
+    download_archive()
+    cases = load_cases(args.golden)
+    needed = {doc_id for case in cases for doc_id in case["expected_doc_ids"]}
+    texts = {doc_id: content for doc_id, content, _ in iter_articles() if doc_id in needed}
+
+    n_bad = 0
+    for case in cases:
+        if problems := case_problems(case, texts):
+            n_bad += 1
+            print(f"{case['id']}: {case['question']}")
+            for problem in problems:
+                print(f"  - {problem}")
+    print(f"{n_bad} of {len(cases)} cases break a rule." if n_bad else f"All {len(cases)} cases pass.")
+    sys.exit(1 if n_bad else 0)
+
+
+if __name__ == "__main__":
+    main()
