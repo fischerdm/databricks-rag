@@ -68,6 +68,22 @@ such as last week's purchases or another company's earnings table. These are rar
 
 Nothing is added automatically."""
 
+ANSWER_HELP = """**The answer the system gave in an answer-scoring run** (`python -m evals.score_answers`).
+
+🟨 Yellow: a key fact found verbatim, the same check as in the articles.
+
+🟦 Blue: the judge's quote for a key fact that is not verbatim.
+The judge decided the answer states the fact in other words; check that it does.
+
+Where the two checks disagree, one of them is wrong:
+- **judge ✓, verbatim ✗**: a paraphrase ('2.5 percent' for '2.5 pct'), or the judge is too lenient.
+- **judge ✗, verbatim ✓**: the fact matched by accident (too short or too common), or the judge is wrong.
+- **quote not in the answer**: the judge invented its evidence; don't trust that verdict.
+
+**Groundedness**: whether every claim in the answer is supported by the retrieved passages (MLflow's
+built-in judge). A grounded answer can still miss the key facts, and an answer with all key facts can
+still add invented claims."""
+
 st.set_page_config(page_title="Golden dataset review", layout="wide")
 
 
@@ -101,6 +117,38 @@ def load_runs(auto_filters: bool) -> list[tuple[str, dict[str, dict]]]:
         if run["config"]["auto_filters"] == auto_filters and (not auto_filters or mode == default_mode):
             runs.append((path.name, {r["id"]: r for r in run["results"]}))
     return runs
+
+
+def load_answer_runs() -> list[tuple[str, dict[str, dict]]]:
+    """All answer-scoring runs (evals/score_answers.py), newest first, results keyed by case id."""
+    return [
+        (path.name, {r["id"]: r for r in json.loads(path.read_text())["results"]})
+        for path in sorted(RUNS_DIR.glob("*-answers.json"), reverse=True)
+    ]
+
+
+def answer_issues(result: dict) -> list[str]:
+    """What to check in one scored answer; empty if both fact checks agree and it is grounded."""
+    issues = []
+    for f in result["facts"]:
+        if f["stated"] and not f["verbatim"]:
+            issues.append(f"paraphrase? {f['fact']!r}")
+        elif f["verbatim"] and f["stated"] is False:
+            issues.append(f"judge disagrees on {f['fact']!r}")
+        elif not f["verbatim"] and f["stated"] is False:
+            issues.append(f"missing {f['fact']!r}")
+        if f["stated"] and not f["quote_found"]:
+            issues.append(f"judge quote not in answer for {f['fact']!r}")
+    if result["grounded"] == "no":
+        issues.append("not grounded")
+    issues += [f"{name} failed" for name in result.get("errors", {})]
+    return issues
+
+
+def answer_label(run_name: str, result: dict) -> str:
+    stamp = datetime.strptime(run_name[:15], "%Y%m%d-%H%M%S").strftime("%Y-%m-%d %H:%M:%S")
+    issues = answer_issues(result)
+    return f"{stamp} · " + (f"⚠️ {'; '.join(issues)}" if issues else "✅ facts stated, grounded")
 
 
 def across_runs(results: list[dict]) -> str:
@@ -143,16 +191,29 @@ def filter_check(applied: dict, metadata: dict) -> str:
     return " · ".join(parts) or "no filters applied"
 
 
-def highlight(text: str, facts: list[str]) -> str:
-    """Article text as HTML with each key fact marked, ignoring case and line breaks."""
-    escaped = html.escape(text)
-    for fact in sorted(facts, key=len, reverse=True):
-        tokens = html.escape(fact).split()
-        if tokens:
-            pattern = r"\s+".join(re.escape(token) for token in tokens)
-            escaped = re.sub(pattern, lambda m: f"<mark>{m.group(0)}</mark>", escaped, flags=re.IGNORECASE)
-    style = "white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 0.85rem; line-height: 1.45"
-    return f'<div style="{style}">{escaped}</div>'
+JUDGE_MARK = '<mark style="background-color: #a5d8ff">'
+
+
+def highlight(text: str, facts: list[str], quotes: list[str] = (), monospace: bool = True) -> str:
+    """Text as HTML with each key fact marked yellow and each judge quote blue, ignoring case and
+    line breaks. A key fact wins where the two overlap: blue marks only what the verbatim check missed.
+    """
+    kinds = [None] * len(text)  # per character: "fact", "quote" or None
+    for phrases, kind in ((quotes, "quote"), (facts, "fact")):  # facts last, so they win
+        for phrase in phrases:
+            if tokens := phrase.split():
+                pattern = r"\s+".join(re.escape(token) for token in tokens)
+                for m in re.finditer(pattern, text, flags=re.IGNORECASE):
+                    kinds[m.start() : m.end()] = [kind] * (m.end() - m.start())
+    parts, start = [], 0
+    for i in range(1, len(text) + 1):
+        if i == len(text) or kinds[i] != kinds[start]:
+            segment = html.escape(text[start:i])
+            opening = {"fact": "<mark>", "quote": JUDGE_MARK}.get(kinds[start])
+            parts.append(f"{opening}{segment}</mark>" if opening else segment)
+            start = i
+    font = "font-family: ui-monospace, monospace; font-size: 0.85rem; " if monospace else ""
+    return f'<div style="white-space: pre-wrap; {font}line-height: 1.45">{"".join(parts)}</div>'
 
 
 def lines(text: str) -> list[str]:
@@ -270,6 +331,7 @@ def duplicate_expander(cid: str, candidate: dict, facts: list[str], nested: bool
 
 cases = load_cases(GOLDEN)
 runs = {label: load_runs(auto) for label, auto in (("with auto filters", True), ("without auto filters", False))}
+answer_runs = load_answer_runs()
 
 
 def is_miss(cid: str) -> bool:
@@ -277,11 +339,16 @@ def is_miss(cid: str) -> bool:
     return any(r and cid in r[0][1] and r[0][1][cid]["rank"] != 1 for r in runs.values())
 
 
+def has_answer_issue(cid: str) -> bool:
+    """The latest answer run flags this case: checks disagree, a fact is missing, or not grounded."""
+    return bool(answer_runs) and cid in answer_runs[0][1] and bool(answer_issues(answer_runs[0][1][cid]))
+
+
 with st.sidebar:
     st.header("Golden dataset")
     n_reviewed = sum(bool(c.get("reviewed")) for c in cases)
     st.progress(n_reviewed / len(cases) if cases else 0.0, text=f"{n_reviewed} of {len(cases)} reviewed")
-    view = st.radio("Show", ["Unreviewed", "Misses in latest runs", "All"])
+    view = st.radio("Show", ["Unreviewed", "Misses in latest runs", "Answers to check", "All"])
     if view == "Unreviewed" and n_reviewed == len(cases):
         # Nothing left to review: show everything rather than an empty page.
         st.success("All cases are reviewed. Showing all.")
@@ -292,6 +359,7 @@ with st.sidebar:
         if view == "All"
         or (view == "Unreviewed" and not c.get("reviewed"))
         or (view == "Misses in latest runs" and is_miss(c["id"]))
+        or (view == "Answers to check" and has_answer_issue(c["id"]))
     ]
     if not shown:
         st.info("Nothing to show in this view. Choose 'All' to see every case.")
@@ -300,13 +368,15 @@ with st.sidebar:
     if state.get("case_id") not in ids:
         state.case_id = ids[0]
     labels = {
-        c["id"]: f"{'✅' if c.get('reviewed') else '⬜'} {c['id']}{'  ⚠️ miss' if is_miss(c['id']) else ''}"
+        c["id"]: f"{'✅' if c.get('reviewed') else '⬜'} {c['id']}"
+        f"{'  ⚠️ miss' if is_miss(c['id']) else ''}{'  🔎 answer' if has_answer_issue(c['id']) else ''}"
         for c in shown
     }
     st.selectbox("Case", ids, key="case_id", format_func=labels.get)
-    st.caption("✅ reviewed · ⚠️ not ranked first in a latest run")
+    st.caption("✅ reviewed · ⚠️ not ranked first in a latest run · 🔎 latest answer run flags it")
     for label, label_runs in runs.items():
         st.caption(f"Runs {label}: {len(label_runs)}, latest {label_runs[0][0] if label_runs else 'none'}")
+    st.caption(f"Answer runs: {len(answer_runs)}, latest {answer_runs[0][0] if answer_runs else 'none'}")
 
 case = next(c for c in cases if c["id"] == state.case_id)
 cid = case["id"]
@@ -422,6 +492,49 @@ with right:
             )
             for c in partial:
                 duplicate_expander(cid, c, facts, nested=True)
+
+st.divider()
+st.markdown("#### Answer", help=ANSWER_HELP)
+case_answers = [(name, run[cid]) for name, run in answer_runs if cid in run]
+if not case_answers:
+    st.caption("Not in any answer run. Run `python -m evals.score_answers` to score answers.")
+else:
+    selected = st.selectbox(
+        "Answer run (newest first)",
+        range(len(case_answers)),
+        format_func=lambda i: answer_label(*case_answers[i]),
+        key=f"answer_run_{cid}",
+    )
+    result = case_answers[selected][1]
+    if result["question"] != state[f"question_{cid}"].strip():
+        st.warning(f"This run used an earlier version of the question: {result['question']}")
+    if result["key_facts"] != facts:
+        st.warning(f"This run scored earlier key facts: {result['key_facts']}")
+    retrieval_note = (
+        f"expected article at rank {result['rank']}"
+        if result["rank"]
+        else "**no expected article retrieved**, so the answer could not contain the facts"
+    )
+    st.caption(f"Retrieval: {retrieval_note} · trace {result['trace_id']}")
+    # Blue only where the verbatim check missed the fact: there the judge's quote shows what it accepted.
+    quotes = [f["quote"] for f in result["facts"] if f["stated"] and not f["verbatim"] and f["quote"]]
+    st.markdown(highlight(result["answer"], result["key_facts"], quotes, monospace=False), unsafe_allow_html=True)
+
+    def mark(value: bool | None) -> str:
+        return "–" if value is None else ("✓" if value else "✗")
+
+    rows = ["| Key fact | Verbatim | Judge | Judge's quote | Judge's reason |", "|---|---|---|---|---|"]
+    for f in result["facts"]:
+        quote = f["quote"] + ("" if f["quote_found"] or not f["stated"] else " ⚠️ not in the answer")
+        cells = [f["fact"], mark(f["verbatim"]), mark(f["stated"]), quote, f["reason"] or ""]
+        rows.append("| " + " | ".join(c.replace("|", "\\|").replace("\n", " ") for c in cells) + " |")
+    st.markdown("\n".join(rows))
+
+    grounded = {"yes": "✓ grounded", "no": "✗ not grounded"}.get(result["grounded"], "– not judged")
+    with st.expander(f"Groundedness: {grounded}", expanded=result["grounded"] == "no"):
+        st.markdown(result["groundedness_rationale"] or "")
+    for name, error in result.get("errors", {}).items():
+        st.error(f"{name} failed: {error}")
 
 st.divider()
 st.markdown("#### Evaluation runs", help=ADD_HELP)
