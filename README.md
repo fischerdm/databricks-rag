@@ -25,6 +25,13 @@ cp .env.example .env   # then set OPENAI_API_KEY
 
 Interactive docs: http://127.0.0.1:8000/docs · Chat UI: http://127.0.0.1:8000/ui
 
+For development (review UI, linter):
+
+```bash
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/ruff check .   # rules in pyproject.toml; --fix applies the safe fixes
+```
+
 ## Chat UI
 
 [app/ui.py](app/ui.py) is a [Chainlit](https://docs.chainlit.io) app mounted into the API at `/ui`. It is a plain client of `/query`: it posts the question over HTTP and renders the SSE stream.

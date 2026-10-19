@@ -192,8 +192,8 @@ async def main() -> None:
         async with semaphore:
             return await generate_case(article, style, args.model)
 
-    drafts = await asyncio.gather(*(limited(a, s) for a, s in zip(articles, styles)))
-    generated = [(a, s, case) for a, s, case in zip(articles, styles, drafts) if case is not None]
+    drafts = await asyncio.gather(*(limited(a, s) for a, s in zip(articles, styles, strict=True)))
+    generated = [(a, s, case) for a, s, case in zip(articles, styles, drafts, strict=True) if case is not None]
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("a") as f:

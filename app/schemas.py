@@ -1,10 +1,9 @@
 from datetime import date
-from typing import Union
 
 from pydantic import BaseModel, Field, model_validator
 
 # Chroma only accepts flat metadata: primitives, or non-empty lists of them.
-MetadataValue = Union[str, int, float, bool, list[str]]
+MetadataValue = str | int | float | bool | list[str]
 
 
 class DocumentInput(BaseModel):

@@ -1,3 +1,5 @@
 -r requirements.txt
 # Review UI for the golden dataset (evals/review_app.py)
 streamlit>=1.40
+# Linter, configured in pyproject.toml
+ruff>=0.17

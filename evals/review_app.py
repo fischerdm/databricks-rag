@@ -25,8 +25,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 os.chdir(ROOT)
 
-from evals.checks import case_problems, content_words, missing_facts  # noqa: E402
 from evals import duplicates  # noqa: E402
+from evals.checks import case_problems, content_words, missing_facts  # noqa: E402
 from evals.duplicates import MAX_DISTANCE  # noqa: E402
 from evals.generate import DEFAULT_OUT as GOLDEN, load_cases  # noqa: E402
 from scripts.ingest_reuters import download_archive, iter_articles  # noqa: E402
@@ -50,9 +50,12 @@ Don't add it if:
 
 The column without auto filters is usually the better candidate list: no wrong filter has removed anything.
 
-**Key facts n/m** counts the case's key facts found verbatim in the article. An expected article should contain all of them.
+**Key facts n/m** counts the case's key facts found verbatim in the article.
+An expected article should contain all of them.
 
-**Distance** is the cosine distance between the question and the article's closest chunk: lower is closer, and search returns the lowest. Compare distances within one question, not across questions. Two copies of one story usually have almost the same distance."""
+**Distance** is the cosine distance between the question and the article's closest chunk:
+lower is closer, and search returns the lowest. Compare distances within one question, not across questions.
+Two copies of one story usually have almost the same distance."""
 
 DUPLICATES_HELP = f"""**Other versions of the expected story**, found by comparing the articles' first chunks
 (distance at most {MAX_DISTANCE}). Reuters often sent a story twice: a repeat, an update, or a short
@@ -186,7 +189,8 @@ def save(cid: str, reviewed: bool | None = None, next_id: str | None = None) -> 
     expected = list(dict.fromkeys(lines(state[f"expected_{cid}"])))
     unknown = [doc_id for doc_id in expected if doc_id not in articles()]
     if not expected or unknown:
-        state.flash = ("error", f"Not saved: unknown article ids {unknown}" if unknown else "Not saved: no expected article")
+        message = f"Not saved: unknown article ids {unknown}" if unknown else "Not saved: no expected article"
+        state.flash = ("error", message)
         return
 
     cases = load_cases(GOLDEN)
@@ -284,7 +288,10 @@ with st.sidebar:
     ids = [c["id"] for c in shown]
     if state.get("case_id") not in ids:
         state.case_id = ids[0]
-    labels = {c["id"]: f"{'✅' if c.get('reviewed') else '⬜'} {c['id']}{'  ⚠️ miss' if is_miss(c['id']) else ''}" for c in shown}
+    labels = {
+        c["id"]: f"{'✅' if c.get('reviewed') else '⬜'} {c['id']}{'  ⚠️ miss' if is_miss(c['id']) else ''}"
+        for c in shown
+    }
     st.selectbox("Case", ids, key="case_id", format_func=labels.get)
     st.caption("✅ reviewed · ⚠️ not ranked first in a latest run")
     for label, label_runs in runs.items():
@@ -398,7 +405,7 @@ st.caption(
 )
 run_columns = st.columns(len(runs), gap="large")
 expected_now = set(lines(state[f"expected_{cid}"]))
-for column, (label, label_runs) in zip(run_columns, runs.items()):
+for column, (label, label_runs) in zip(run_columns, runs.items(), strict=True):
     with column:
         st.markdown(f"**{label}**")
         case_runs = [(name, run[cid]) for name, run in label_runs if cid in run]
