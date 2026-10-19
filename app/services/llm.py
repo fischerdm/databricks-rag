@@ -25,6 +25,21 @@ def build_context(chunks: list[RetrievedChunk]) -> str:
     return "\n\n".join(f"[{i}] {chunk.text}" for i, chunk in enumerate(chunks, start=1))
 
 
+def build_messages(question: str, chunks: list[RetrievedChunk]) -> list[dict]:
+    return [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": f"Context:\n{build_context(chunks)}\n\nQuestion: {question}"},
+    ]
+
+
+async def generate_answer(question: str, chunks: list[RetrievedChunk]) -> str:
+    """The whole answer at once: same prompt and model as stream_answer, for the evaluation."""
+    completion = await _client().chat.completions.create(
+        model=get_settings().chat_model, messages=build_messages(question, chunks)
+    )
+    return completion.choices[0].message.content or ""
+
+
 def _sse(event: str, data: object) -> str:
     # JSON-encode the payload so newlines in tokens cannot break SSE framing.
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
@@ -38,10 +53,7 @@ async def stream_answer(question: str, chunks: list[RetrievedChunk], filters: Se
     stream = await _client().chat.completions.create(
         model=get_settings().chat_model,
         stream=True,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": f"Context:\n{build_context(chunks)}\n\nQuestion: {question}"},
-        ],
+        messages=build_messages(question, chunks),
     )
     async for event in stream:
         if event.choices and event.choices[0].delta.content:
