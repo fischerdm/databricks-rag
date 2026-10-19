@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     # Where the Chainlit UI (app/ui.py) reaches the API; it calls /query over HTTP.
     api_url: str = "http://127.0.0.1:8000"
 
+    # Only for answer scoring (evals/score_answers.py). The judge comes from another provider than
+    # chat_model, so the answers are not graded by a model of their own family.
+    anthropic_api_key: str | None = None
+    judge_model: str = "claude-sonnet-5-5"
+
 
 @lru_cache
 def get_settings() -> Settings:

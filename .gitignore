@@ -9,3 +9,6 @@ data/*
 .chainlit/translations/
 chainlit.md
 evals/runs/
+# MLflow tracking store and artifacts (evals/score_answers.py)
+mlflow.db
+mlruns/
