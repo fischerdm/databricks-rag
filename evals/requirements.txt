@@ -1,0 +1,5 @@
+# Only for the read-only review app on Streamlit Community Cloud (REVIEW_DEMO=1), which picks up the
+# requirements file next to evals/review_app.py before the one in the repo root. The demo needs no
+# index and no OpenAI client. For local work, install requirements-dev.txt from the repo root.
+streamlit>=1.40
+pydantic-settings>=2.4

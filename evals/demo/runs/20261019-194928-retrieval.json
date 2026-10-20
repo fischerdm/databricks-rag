@@ -1,0 +1,1818 @@
+{
+  "config": {
+    "golden": "evals/golden.jsonl",
+    "top_k": 4,
+    "auto_filters": true,
+    "topic_mode": "off",
+    "topic_boost": 0.05,
+    "reviewed_only": false,
+    "filter_model": "gpt-5.4-nano",
+    "embedding_model": "text-embedding-3-small",
+    "chunk_size": 1000,
+    "chunk_overlap": 200
+  },
+  "summary": {
+    "n": 50,
+    "hit@1": 0.88,
+    "hit@k": 0.94,
+    "mrr": 0.9066666666666667,
+    "filtered_out": 0.02
+  },
+  "by_style": {
+    "dated": {
+      "n": 30,
+      "hit@1": 0.9,
+      "hit@k": 0.9333333333333333,
+      "mrr": 0.9166666666666666,
+      "filtered_out": 0.03333333333333333
+    },
+    "undated": {
+      "n": 20,
+      "hit@1": 0.85,
+      "hit@k": 0.95,
+      "mrr": 0.8916666666666668,
+      "filtered_out": 0.0
+    }
+  },
+  "results": [
+    {
+      "id": "q0001",
+      "question": "What weather will delay sugar beet planting in the Soviet Union?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-16975"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-16975",
+          "title": "SUGAR PLANTING IN WESTERN EUROPE, DELAY IN USSR",
+          "distance": 0.2105119228363037
+        },
+        {
+          "document_id": "reuters-17123",
+          "title": "EUROPEAN BEET SOWINGS CATCH UP, USSR DELAYED",
+          "distance": 0.2811918258666992
+        },
+        {
+          "document_id": "reuters-19262",
+          "title": "COLD, WET WEATHER SLOWS BEET GROWTH IN W. EUROPE",
+          "distance": 0.3418780565261841
+        },
+        {
+          "document_id": "reuters-15462",
+          "title": "WEST GERMAN BEET PLANTINGS DELAYED THREE WEEKS",
+          "distance": 0.3432486057281494
+        }
+      ]
+    },
+    {
+      "id": "q0002",
+      "question": "What did Aldo Hofmeister say about the quality of INRO buffer stock rubber?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-21557"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-21557",
+          "title": "RUBBER STOCK MANAGER SAYS QUALITY ACCEPTABLE",
+          "distance": 0.25876927375793457
+        },
+        {
+          "document_id": "reuters-21557",
+          "title": "RUBBER STOCK MANAGER SAYS QUALITY ACCEPTABLE",
+          "distance": 0.30799436569213867
+        },
+        {
+          "document_id": "reuters-21557",
+          "title": "RUBBER STOCK MANAGER SAYS QUALITY ACCEPTABLE",
+          "distance": 0.37216800451278687
+        },
+        {
+          "document_id": "reuters-13462",
+          "title": "COCOA BUFFER STOCK MAY FACE UPHILL BATTLE - TRADE",
+          "distance": 0.50419682264328
+        }
+      ]
+    },
+    {
+      "id": "q0003",
+      "question": "How much cocoa did the Ghana Cocoa Board purchase in the 24th week on April 1?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-11811"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-04-01",
+        "date_to": "1987-04-02"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-11811",
+          "title": "GHANA COCOA PURCHASES SLOW",
+          "distance": 0.21697574853897095
+        },
+        {
+          "document_id": "reuters-12426",
+          "title": "PRICES RISE AT BANGALORE COFFEE AUCTION",
+          "distance": 0.5357308983802795
+        },
+        {
+          "document_id": "reuters-11893",
+          "title": "U.K. INTERVENTION BOARD DETAILS EC SUGAR SALES",
+          "distance": 0.5664827823638916
+        },
+        {
+          "document_id": "reuters-12543",
+          "title": "COLOMBIA BUYS 25,000 TONNES FRENCH WHEAT - TRADE",
+          "distance": 0.5715314149856567
+        }
+      ]
+    },
+    {
+      "id": "q0004",
+      "question": "What export registration price did Colombia announce for coffee?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-4603"
+      ],
+      "rank": 3,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-5002",
+          "title": "COLOMBIA OPENS APRIL/MAY COFFEE REGISTRATIONS",
+          "distance": 0.2709328532218933
+        },
+        {
+          "document_id": "reuters-15357",
+          "title": "COLOMBIA COFFEE REGISTRATIONS REMAIN OPEN",
+          "distance": 0.2751968502998352
+        },
+        {
+          "document_id": "reuters-4603",
+          "title": "COLOMBIA'S COFFEE MARKETING TO BE MORE FLEXIBLE",
+          "distance": 0.276145339012146
+        },
+        {
+          "document_id": "reuters-21177",
+          "title": "COLOMBIA OPENS COFFEE REGISTRATIONS - LDN TRADE",
+          "distance": 0.28246790170669556
+        }
+      ]
+    },
+    {
+      "id": "q0005",
+      "question": "What cash bid did Alcan Australia make for Alcan New Zealand shares?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-10335"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-10335",
+          "title": "ALCAN AUSTRALIA BIDS FOR ALCAN NEW ZEALAND",
+          "distance": 0.16009241342544556
+        },
+        {
+          "document_id": "reuters-10335",
+          "title": "ALCAN AUSTRALIA BIDS FOR ALCAN NEW ZEALAND",
+          "distance": 0.26897990703582764
+        },
+        {
+          "document_id": "reuters-11767",
+          "title": "ALCAN AUSTRALIA LIFTS ALUMINIUM INGOT PRICE",
+          "distance": 0.37221384048461914
+        },
+        {
+          "document_id": "reuters-18505",
+          "title": "ALCAN AUSTRALIA SEEKS 100 MLN DLR FACILITY",
+          "distance": 0.38705170154571533
+        }
+      ]
+    },
+    {
+      "id": "q0006",
+      "question": "What did Nicolas Mosar warn about Gulf War developments and oil markets?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-18340"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-18340",
+          "title": "EC WATCHING GULF WAR DEVELOPMENTS",
+          "distance": 0.33203041553497314
+        },
+        {
+          "document_id": "reuters-11149",
+          "title": "U.S. SHOULD REASSESS MIDEAST POLICY - ANALYST",
+          "distance": 0.45531904697418213
+        },
+        {
+          "document_id": "reuters-6722",
+          "title": "U.S. ENERGY INDUSTRY SAID IN BETTER HEALTH",
+          "distance": 0.4916975498199463
+        },
+        {
+          "document_id": "reuters-8131",
+          "title": "EXXON OFFICIAL URGES PLANNING FOR NEXT OIL SURGE",
+          "distance": 0.5020332336425781
+        }
+      ]
+    },
+    {
+      "id": "q0007",
+      "question": "What dividend did Volkswagen set for its ordinary shares?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-15547"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-15547",
+          "title": "VOLKSWAGEN DIVIDEND UNCHANGED ON 1986",
+          "distance": 0.27355092763900757
+        },
+        {
+          "document_id": "reuters-15020",
+          "title": "VOLKSWAGEN DIVIDEND DECISION DUE TOMORROW",
+          "distance": 0.30256521701812744
+        },
+        {
+          "document_id": "reuters-15581",
+          "title": "VW SAYS 480 MLN MARKS MAXIMUM FOR CURRENCY LOSSES",
+          "distance": 0.3200089931488037
+        },
+        {
+          "document_id": "reuters-15020",
+          "title": "VOLKSWAGEN DIVIDEND DECISION DUE TOMORROW",
+          "distance": 0.3819018602371216
+        }
+      ]
+    },
+    {
+      "id": "q0008",
+      "question": "What OECD growth rate did the EIU forecast for 1987?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-3019",
+        "reuters-3065"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-3065",
+          "title": "OECD TRADE, GROWTH SEEN SLOWING IN 1987",
+          "distance": 0.2762439250946045
+        },
+        {
+          "document_id": "reuters-3019",
+          "title": "OECD TRADE, GROWTH SEEN SLOWING IN 1987",
+          "distance": 0.3103642463684082
+        },
+        {
+          "document_id": "reuters-3019",
+          "title": "OECD TRADE, GROWTH SEEN SLOWING IN 1987",
+          "distance": 0.3268004059791565
+        },
+        {
+          "document_id": "reuters-3065",
+          "title": "OECD TRADE, GROWTH SEEN SLOWING IN 1987",
+          "distance": 0.3268004059791565
+        }
+      ]
+    },
+    {
+      "id": "q0009",
+      "question": "What did West Germany oppose in the EC farm reform proposals?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-5285"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-5285",
+          "title": "U.K. AND GERMANY LEAD ATTACK ON EC FARM REFORMS",
+          "distance": 0.29788732528686523
+        },
+        {
+          "document_id": "reuters-18403",
+          "title": "GERMANY PLANS TO RUSH SPECIAL CREDITS TO FARMERS",
+          "distance": 0.34278571605682373
+        },
+        {
+          "document_id": "reuters-11592",
+          "title": "DUTCH MINISTER ATTACKS W. GERMAN FARM POSITION",
+          "distance": 0.35076403617858887
+        },
+        {
+          "document_id": "reuters-672",
+          "title": "EC MINISTERS STRUGGLE TO AGREE ON DAIRY CUTS",
+          "distance": 0.35416853427886963
+        }
+      ]
+    },
+    {
+      "id": "q0010",
+      "question": "What dividend and stock split did K mart announce on March 24?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-8846"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-03-24",
+        "date_to": "1987-03-25"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-8846",
+          "title": "K MART <KM> RAISES PAYOUT, VOTES SPLIT",
+          "distance": 0.2161363959312439
+        },
+        {
+          "document_id": "reuters-9416",
+          "title": "K MART <KM> UNIT BUYS TEXAS LAND",
+          "distance": 0.49329042434692383
+        },
+        {
+          "document_id": "reuters-9284",
+          "title": "HORIZON BANK <HRZB> SETS STOCK SPLIT",
+          "distance": 0.4943816661834717
+        },
+        {
+          "document_id": "reuters-9599",
+          "title": "NORDSON <NDSN> SETS 3-FOR-2 SPLIT",
+          "distance": 0.49903059005737305
+        }
+      ]
+    },
+    {
+      "id": "q0011",
+      "question": "What were MONY Real Estate Investors' third-quarter earnings on March 17?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-6213"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-03-17",
+        "date_to": "1987-03-18"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-6213",
+          "title": "MONY REAL ESTATE INVESTORS <MYM> 3RD QTR FEB 28",
+          "distance": 0.26795023679733276
+        },
+        {
+          "document_id": "reuters-6534",
+          "title": "<MUNICIPAL FINANCIAL CORP> 1ST QTR JAN 31 NET",
+          "distance": 0.4647352695465088
+        },
+        {
+          "document_id": "reuters-6298",
+          "title": "DAMON CREATIONS INC <DNI> 4TH QTR JAN THREE NET",
+          "distance": 0.4745138883590698
+        },
+        {
+          "document_id": "reuters-6005",
+          "title": "AMRE INC <AMRE> 3RD QTR JAN 31 NET",
+          "distance": 0.4780235290527344
+        }
+      ]
+    },
+    {
+      "id": "q0012",
+      "question": "What caused the Herald of Free Enterprise to capsize near Zeebrugge?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-17318"
+      ],
+      "rank": null,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-2819",
+          "title": "CHANNEL FERRY REPORTED SINKING OFF BELGIUM",
+          "distance": 0.29060572385787964
+        },
+        {
+          "document_id": "reuters-2853",
+          "title": "TWO HUNDRED PEOPLE RESCUED FROM SINKING FERRY",
+          "distance": 0.35148489475250244
+        },
+        {
+          "document_id": "reuters-2968",
+          "title": "EXPERTS HAD EXPRESSED FEARS OVER RO-RO SAFETY",
+          "distance": 0.3565084934234619
+        },
+        {
+          "document_id": "reuters-3440",
+          "title": "SEARCH FOR BRITISH FERRY'S TOXIC CARGO CONTINUES",
+          "distance": 0.3733479976654053
+        }
+      ]
+    },
+    {
+      "id": "q0013",
+      "question": "What were United Biscuits' pretax profit and turnover in the 53 weeks to January 3, 1987?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-6349"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-6349",
+          "title": "UNITED BISCUITS <UBIS.L> 53 WEEKS TO JANUARY 3",
+          "distance": 0.2774322032928467
+        },
+        {
+          "document_id": "reuters-8155",
+          "title": "BOOKER PLC <BOKL.L> 1986 YEAR",
+          "distance": 0.4274919033050537
+        },
+        {
+          "document_id": "reuters-4081",
+          "title": "ROWNTREE REPORTS PRETAX PROFIT AT 84 MLN STG",
+          "distance": 0.4281691908836365
+        },
+        {
+          "document_id": "reuters-18495",
+          "title": "BRITISH TELECOM RAISES 1986/87 PROFIT 11.7 PCT",
+          "distance": 0.4284093379974365
+        }
+      ]
+    },
+    {
+      "id": "q0014",
+      "question": "What pact did California Micro Devices and Grumman's Tachonics sign in March?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-10151"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-03-01",
+        "date_to": "1987-03-31"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-10151",
+          "title": "CALIFORNIA MICRO <CAMD>, GRUMMAN <GQ> SET PACT",
+          "distance": 0.22386044263839722
+        },
+        {
+          "document_id": "reuters-10236",
+          "title": "<TECHNOLOGY MARKETING INC > SETS CONTRACT",
+          "distance": 0.43729472160339355
+        },
+        {
+          "document_id": "reuters-10938",
+          "title": "MCDONNELL <MD> UNIT SIGNS PACT WITH MARTIN <ML>",
+          "distance": 0.47184741497039795
+        },
+        {
+          "document_id": "reuters-6029",
+          "title": "CALIFORNIA MICRO <CAMD> TRADES ON NASDAQ",
+          "distance": 0.479103684425354
+        }
+      ]
+    },
+    {
+      "id": "q0015",
+      "question": "Why is Cehave NV Veghel challenging the European Community grain co-responsibility levy?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-16146"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-16146",
+          "title": "DUTCH FEED COMPOUNDER STARTS CASE AGAINST EC LEVY",
+          "distance": 0.2653127908706665
+        },
+        {
+          "document_id": "reuters-9907",
+          "title": "DUTCH GRAIN LEVY TEST CASE TO START IN APRIL",
+          "distance": 0.35961151123046875
+        },
+        {
+          "document_id": "reuters-16146",
+          "title": "DUTCH FEED COMPOUNDER STARTS CASE AGAINST EC LEVY",
+          "distance": 0.3632875680923462
+        },
+        {
+          "document_id": "reuters-16146",
+          "title": "DUTCH FEED COMPOUNDER STARTS CASE AGAINST EC LEVY",
+          "distance": 0.40301084518432617
+        }
+      ]
+    },
+    {
+      "id": "q0016",
+      "question": "What price per share will Charter Federal pay for Jefferson Savings and Loan in March?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-8373"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-03-01",
+        "date_to": "1987-03-31"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-8373",
+          "title": "CHARTER FEDERAL <CHFD>, JEFFERSON TO MERGE",
+          "distance": 0.2776453495025635
+        },
+        {
+          "document_id": "reuters-11680",
+          "title": "CHARTER <CHR> COMPLETES REORGANIZATION",
+          "distance": 0.4461252689361572
+        },
+        {
+          "document_id": "reuters-11680",
+          "title": "CHARTER <CHR> COMPLETES REORGANIZATION",
+          "distance": 0.4514336585998535
+        },
+        {
+          "document_id": "reuters-9240",
+          "title": "WASHINGTON FEDERAL SAVINGS <WFSL> QUARTERLY DIV",
+          "distance": 0.4579756259918213
+        }
+      ]
+    },
+    {
+      "id": "q0017",
+      "question": "What is Bank of British Columbia's revised shareholder distribution estimate after selling its assets?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-4019"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-4019",
+          "title": "BANK OF B.C. REVISES SHARE PAYOUT ESTIMATE",
+          "distance": 0.19995921850204468
+        },
+        {
+          "document_id": "reuters-4012",
+          "title": "BANK OF BRITISH COLUMBIA 1ST QTR JAN 31 NET",
+          "distance": 0.34780967235565186
+        },
+        {
+          "document_id": "reuters-4019",
+          "title": "BANK OF B.C. REVISES SHARE PAYOUT ESTIMATE",
+          "distance": 0.3541109561920166
+        },
+        {
+          "document_id": "reuters-1456",
+          "title": "B.C. RESOURCES HAS AGREEMENT ON CREDIT FACILITY",
+          "distance": 0.38672226667404175
+        }
+      ]
+    },
+    {
+      "id": "q0018",
+      "question": "Why did TecSyn terminate takeover talks on June 29?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-19912"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-06-29",
+        "date_to": "1987-06-30"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-19912",
+          "title": "TECSYN <TSNA.TO> TERMINATES TAKEOVER TALKS",
+          "distance": 0.1862344741821289
+        },
+        {
+          "document_id": "reuters-19766",
+          "title": "BECOR <BCW> TO ADJOURN DELAYED HOLDERS MEETING",
+          "distance": 0.5503506660461426
+        },
+        {
+          "document_id": "reuters-19926",
+          "title": "CONTEL <CTC> SEES LOWER 2ND QTR, YEAR NET",
+          "distance": 0.5546996593475342
+        },
+        {
+          "document_id": "reuters-19760",
+          "title": "SEC SAYS CAMPEAU UNIT VIOLATED DISCLOSURE RULES",
+          "distance": 0.5595750212669373
+        }
+      ]
+    },
+    {
+      "id": "q0019",
+      "question": "What was the maximum export rebate at the EC sugar tender on April 8?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-15394"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-04-08",
+        "date_to": "1987-04-09"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-15394",
+          "title": "EC SUGAR TENDER SEEN MARKING NO CHANGE IN POLICY",
+          "distance": 0.24652862548828125
+        },
+        {
+          "document_id": "reuters-15017",
+          "title": "EC COMMISSION DETAILS SUGAR TENDER",
+          "distance": 0.2560274600982666
+        },
+        {
+          "document_id": "reuters-14923",
+          "title": "FRENCH TRADERS FORECAST EC SUGAR TENDER",
+          "distance": 0.28240203857421875
+        },
+        {
+          "document_id": "reuters-14885",
+          "title": "EC SUGAR TENDER HARD TO PREDICT - LONDON TRADE",
+          "distance": 0.3023403286933899
+        }
+      ]
+    },
+    {
+      "id": "q0020",
+      "question": "Who sold Pakistan 100,000 tonnes of white sugar at tender?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-16327"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-16327",
+          "title": "PAKISTAN REPORTEDLY BOUGHT WHITE SUGAR AT TENDER",
+          "distance": 0.19166797399520874
+        },
+        {
+          "document_id": "reuters-11166",
+          "title": "PAKISTAN BIDS FOR IMPORT OF 100,000 TONNES SUGAR",
+          "distance": 0.23256266117095947
+        },
+        {
+          "document_id": "reuters-15415",
+          "title": "CARGILL CONFIRMS WHITE SUGAR SALE TO INDIA",
+          "distance": 0.32044166326522827
+        },
+        {
+          "document_id": "reuters-343",
+          "title": "INDIA TO HOLD WHITE SUGAR BUYING TENDER",
+          "distance": 0.3773890733718872
+        }
+      ]
+    },
+    {
+      "id": "q0021",
+      "question": "What did Japan commit to in the April G-7 statement about opening its markets?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-15375",
+        "reuters-15452"
+      ],
+      "rank": null,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-04-01",
+        "date_to": "1987-04-30"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-15408",
+          "title": "G-7 COMMITMENT TESTS JAPAN'S WILL TO BOOST ECONOMY",
+          "distance": 0.31839609146118164
+        },
+        {
+          "document_id": "reuters-15456",
+          "title": "G-7 COMMITMENT TESTS JAPAN'S WILL TO BOOST ECONOMY",
+          "distance": 0.31839609146118164
+        },
+        {
+          "document_id": "reuters-16153",
+          "title": "U.S. LAWMAKERS URGE JAPAN TO OPEN FINANCIAL MARKET",
+          "distance": 0.37858355045318604
+        },
+        {
+          "document_id": "reuters-16184",
+          "title": "U.S. LAWMAKERS URGE JAPAN TO OPEN FINANCIAL MARKET",
+          "distance": 0.37864720821380615
+        }
+      ]
+    },
+    {
+      "id": "q0022",
+      "question": "On March 5, how high did Taiwan's foreign exchange reserves rise?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-1940"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-03-05",
+        "date_to": "1987-03-06"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-1940",
+          "title": "TAIWAN FOREIGN EXCHANGE RESERVES HIT NEW HIGH",
+          "distance": 0.23976129293441772
+        },
+        {
+          "document_id": "reuters-1940",
+          "title": "TAIWAN FOREIGN EXCHANGE RESERVES HIT NEW HIGH",
+          "distance": 0.514397382736206
+        },
+        {
+          "document_id": "reuters-2025",
+          "title": "YEUTTER PUTS CURRENCY BURDEN ON TAIWAN, KOREA",
+          "distance": 0.5293691158294678
+        },
+        {
+          "document_id": "reuters-2858",
+          "title": "TREASURY BALANCES AT FED FELL ON MARCH 5",
+          "distance": 0.53183513879776
+        }
+      ]
+    },
+    {
+      "id": "q0023",
+      "question": "Did Pratt Hotel Corp's tender offer for Resorts International meet the 51 percent condition?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-5121"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-5121",
+          "title": "PRATT <PRAT> OFFER FOR RESORTS <RT> EXPIRES",
+          "distance": 0.26568448543548584
+        },
+        {
+          "document_id": "reuters-9047",
+          "title": "RESORTS INT'L <RT.A> RECEIVES TAKEOVER OFFER",
+          "distance": 0.4199092984199524
+        },
+        {
+          "document_id": "reuters-11888",
+          "title": "SOSNOFF ENDS PRATT <PRAT>/SOUTHMARK <SM> DEAL",
+          "distance": 0.43770796060562134
+        },
+        {
+          "document_id": "reuters-9047",
+          "title": "RESORTS INT'L <RT.A> RECEIVES TAKEOVER OFFER",
+          "distance": 0.4379615783691406
+        }
+      ]
+    },
+    {
+      "id": "q0024",
+      "question": "What U.S. joint venture did Nippon Mining sign with Conoco Inc?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-17419"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-17419",
+          "title": "NIPPON MINING PLANS MORE U.S. JOINT VENTURES",
+          "distance": 0.22466444969177246
+        },
+        {
+          "document_id": "reuters-11403",
+          "title": "CHEVRON <CHV>, NIPPON OIL FORM JOINT VENTURE",
+          "distance": 0.31867456436157227
+        },
+        {
+          "document_id": "reuters-17419",
+          "title": "NIPPON MINING PLANS MORE U.S. JOINT VENTURES",
+          "distance": 0.3985779285430908
+        },
+        {
+          "document_id": "reuters-3469",
+          "title": "NIPPON STEEL, INLAND DISCUSSING U.S. JOINT VENTURE",
+          "distance": 0.414872407913208
+        }
+      ]
+    },
+    {
+      "id": "q0025",
+      "question": "What would Allis-Chalmers keep under its restructuring plan?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-1860"
+      ],
+      "rank": 2,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-19849",
+          "title": "ALLIS-CHALMERS <AH> LISTS MAIN CREDITORS",
+          "distance": 0.23214471340179443
+        },
+        {
+          "document_id": "reuters-1860",
+          "title": "ALLIS-CHALMERS <AH> PROPOSES RESTRUCTURING",
+          "distance": 0.2471630573272705
+        },
+        {
+          "document_id": "reuters-1860",
+          "title": "ALLIS-CHALMERS <AH> PROPOSES RESTRUCTURING",
+          "distance": 0.28066396713256836
+        },
+        {
+          "document_id": "reuters-1860",
+          "title": "ALLIS-CHALMERS <AH> PROPOSES RESTRUCTURING",
+          "distance": 0.28657257556915283
+        }
+      ]
+    },
+    {
+      "id": "q0026",
+      "question": "What did Dauphin Deposit Corp agree to acquire on April 13?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-16648"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-04-13",
+        "date_to": "1987-04-14"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-16648",
+          "title": "DAUPHIN DEPOSIT <DAPN> TO ACQUIRE COLONIAL",
+          "distance": 0.26794224977493286
+        },
+        {
+          "document_id": "reuters-16420",
+          "title": "MIDLANTIC <MIDL.O> TO ACQUIRE COUNTY BANCORP",
+          "distance": 0.48360300064086914
+        },
+        {
+          "document_id": "reuters-16130",
+          "title": "OFFER FOR DOME MAY SHORT-CIRCUIT ITS DEBT TALKS",
+          "distance": 0.4860786199569702
+        },
+        {
+          "document_id": "reuters-16215",
+          "title": "OFFER FOR DOME MAY SHORT-CIRCUIT ITS DEBT TALKS",
+          "distance": 0.4860883951187134
+        }
+      ]
+    },
+    {
+      "id": "q0027",
+      "question": "What credit guarantees will Saudi Arabia accept from Petrobras?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-5123",
+        "reuters-5125",
+        "reuters-5281"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-5125",
+          "title": "SAUDI ARABIA DECIDES TO ACCEPT BRAZIL CREDIT",
+          "distance": 0.309471070766449
+        },
+        {
+          "document_id": "reuters-5123",
+          "title": "SAUDIS DROP CONDITION FOR OIL SALE TO BRAZIL",
+          "distance": 0.34295761585235596
+        },
+        {
+          "document_id": "reuters-5281",
+          "title": "SAUDIS DROP CONDITION FOR OIL SALE TO BRAZIL",
+          "distance": 0.34840691089630127
+        },
+        {
+          "document_id": "reuters-4689",
+          "title": "PETROBRAS CANCELS OIL PURCHASE FROM SAUDI ARABIA",
+          "distance": 0.36650335788726807
+        }
+      ]
+    },
+    {
+      "id": "q0028",
+      "question": "What did Malcolm Baldrige predict about the U.S.-Japan semiconductor trade dispute?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-10665",
+        "reuters-10781"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-10665",
+          "title": "BALDRIGE PREDICTS END OF U.S.-JAPAN TRADE DISPUTE",
+          "distance": 0.2571239471435547
+        },
+        {
+          "document_id": "reuters-10781",
+          "title": "BALDRIGE PREDICTS END OF U.S.-JAPAN TRADE DISPUTE",
+          "distance": 0.25754857063293457
+        },
+        {
+          "document_id": "reuters-13273",
+          "title": "BALDRIGE SEES NO TRADE WAR WITH JAPAN",
+          "distance": 0.2710312604904175
+        },
+        {
+          "document_id": "reuters-5690",
+          "title": "SCHLUMBERGER <SLB> MAY HAVE ALTERNATE BUYER",
+          "distance": 0.277757465839386
+        }
+      ]
+    },
+    {
+      "id": "q0029",
+      "question": "What were Fine Art Acquisitions Ltd's fourth-quarter sales and net income?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-12898"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-12898",
+          "title": "FINE ART ACQUISITIONS LTD <FAAA> 4TH QTR NET",
+          "distance": 0.330837607383728
+        },
+        {
+          "document_id": "reuters-3801",
+          "title": "<FOR BETTER LIVING INC> 4TH QTR NET",
+          "distance": 0.38583993911743164
+        },
+        {
+          "document_id": "reuters-9973",
+          "title": "HOUSE OF FABRICS INC <HF> 4TH QTR JAN 31 NET",
+          "distance": 0.4265633821487427
+        },
+        {
+          "document_id": "reuters-169",
+          "title": "MAYFAIR INDUSTRIES INC <MAYF> 4TH QTR NET",
+          "distance": 0.4306860566139221
+        }
+      ]
+    },
+    {
+      "id": "q0030",
+      "question": "In June, was the U.S. considering lifting tariffs on Japanese semiconductor trade?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-18104"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-06-01",
+        "date_to": "1987-06-30"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-18104",
+          "title": "U.S. WEIGHS LIFTING JAPANESE TRADE CURBS",
+          "distance": 0.2403017282485962
+        },
+        {
+          "document_id": "reuters-18148",
+          "title": "SHULTZ WELCOMES TOKYO ECONOMIC PACKAGE",
+          "distance": 0.34889358282089233
+        },
+        {
+          "document_id": "reuters-17912",
+          "title": "JAPAN TO SET MICROCHIP PRODUCTION GUIDELINES",
+          "distance": 0.38371706008911133
+        },
+        {
+          "document_id": "reuters-18519",
+          "title": "TOSHIBA, SHARP RESTRAIN LAP-TOP PC EXPORTS TO EC",
+          "distance": 0.4299335479736328
+        }
+      ]
+    },
+    {
+      "id": "q0031",
+      "question": "What tin export quotas did the ATPC set for Malaysia and Indonesia on March 2?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-311"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-03-02",
+        "date_to": "1987-03-03"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-311",
+          "title": "ATPC MEMBERS FIND WAYS TO CURB TIN EXPORTS",
+          "distance": 0.2144073247909546
+        },
+        {
+          "document_id": "reuters-311",
+          "title": "ATPC MEMBERS FIND WAYS TO CURB TIN EXPORTS",
+          "distance": 0.3062983751296997
+        },
+        {
+          "document_id": "reuters-311",
+          "title": "ATPC MEMBERS FIND WAYS TO CURB TIN EXPORTS",
+          "distance": 0.33896273374557495
+        },
+        {
+          "document_id": "reuters-908",
+          "title": "ZAIRE ACCEPTS TIN-EXPORT QUOTA, ATPC SAYS",
+          "distance": 0.34043800830841064
+        }
+      ]
+    },
+    {
+      "id": "q0032",
+      "question": "What did Fidelcor Business Credit Corp agree to buy from Lazere Financial in April?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-12350"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-04-01",
+        "date_to": "1987-04-30"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-12350",
+          "title": "FIDELCOR <FICR> UNIT ACQUIRES LAZERE FINANCIAL",
+          "distance": 0.2217700481414795
+        },
+        {
+          "document_id": "reuters-15061",
+          "title": "FIDELCOR <FICR> COMPLETES SALE OF UNIT",
+          "distance": 0.43040305376052856
+        },
+        {
+          "document_id": "reuters-16512",
+          "title": "ATLANTIC FINANCIAL <ATLF.O> TO ACQUIRE S AND L",
+          "distance": 0.5073497891426086
+        },
+        {
+          "document_id": "reuters-16459",
+          "title": "LASER PHOTONICS INC <LAZR.O> CLOSES SALE",
+          "distance": 0.5150781869888306
+        }
+      ]
+    },
+    {
+      "id": "q0033",
+      "question": "How much beef did Argentina export in Jan/Feb 1987?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-4022"
+      ],
+      "rank": null,
+      "filtered_out": true,
+      "applied_filters": {
+        "date_from": "1987-01-01",
+        "date_to": "1987-02-28"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-6",
+          "title": "ARGENTINE 1986/87 GRAIN/OILSEED REGISTRATIONS",
+          "distance": 0.3877764940261841
+        },
+        {
+          "document_id": "reuters-105",
+          "title": "SUGAR QUOTA IMPORTS DETAILED -- USDA",
+          "distance": 0.518310010433197
+        },
+        {
+          "document_id": "reuters-181",
+          "title": "U.S. TREASURY PART OF ARGENTINE BRIDGE LOAN",
+          "distance": 0.5376682281494141
+        },
+        {
+          "document_id": "reuters-1",
+          "title": "BAHIA COCOA REVIEW",
+          "distance": 0.5479285717010498
+        }
+      ]
+    },
+    {
+      "id": "q0034",
+      "question": "What were MCI Communications Corp's third-quarter net earnings on October 19?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-21324"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-10-19",
+        "date_to": "1987-10-20"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-21324",
+          "title": "MCI COMMUNICATIONS CORP <MCIC.O> 3RD QTR NET",
+          "distance": 0.20340490341186523
+        },
+        {
+          "document_id": "reuters-20337",
+          "title": "WARNER COMMUNICATIONS INC <WCI> 3RD QTR NET",
+          "distance": 0.36099857091903687
+        },
+        {
+          "document_id": "reuters-21453",
+          "title": "CMS ENERGY CORP <CMS> 3RD QTR NET",
+          "distance": 0.3676043748855591
+        },
+        {
+          "document_id": "reuters-21113",
+          "title": "COMERICA INC <CMCA.O> 3RD QTR NET",
+          "distance": 0.37759339809417725
+        }
+      ]
+    },
+    {
+      "id": "q0035",
+      "question": "Why did Numac Oil and Gas expect results to improve in 1987?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-3846"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-3846",
+          "title": "NUMAC OIL <NMC> SEES RESULTS IMPROVING",
+          "distance": 0.20585787296295166
+        },
+        {
+          "document_id": "reuters-9952",
+          "title": "NORCEN SEES IMPROVEMENT IN 1987 EARNINGS",
+          "distance": 0.376140296459198
+        },
+        {
+          "document_id": "reuters-3840",
+          "title": "NUMAC OIL AND GAS LTD <NMC> YEAR NET",
+          "distance": 0.3777505159378052
+        },
+        {
+          "document_id": "reuters-5936",
+          "title": "NUMAC OIL <NMC> HAS 59.7 MLN DLR FINANCING",
+          "distance": 0.41477227210998535
+        }
+      ]
+    },
+    {
+      "id": "q0036",
+      "question": "What was the September U.S. housing starts rate?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-20116"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-20116",
+          "title": "U.S. HOUSING STARTS ROSE 4.4 PCT IN SEPTEMBER",
+          "distance": 0.23836779594421387
+        },
+        {
+          "document_id": "reuters-20116",
+          "title": "U.S. HOUSING STARTS ROSE 4.4 PCT IN SEPTEMBER",
+          "distance": 0.2934607267379761
+        },
+        {
+          "document_id": "reuters-5886",
+          "title": "U.S. HOUSING STARTS ROSE 2.6 PCT IN FEBRUARY",
+          "distance": 0.34115302562713623
+        },
+        {
+          "document_id": "reuters-18463",
+          "title": "U.S. HOUSING STARTS FELL 2.7 PCT IN MAY",
+          "distance": 0.3494694232940674
+        }
+      ]
+    },
+    {
+      "id": "q0037",
+      "question": "What did Gad Yaacobi say about Israel's exports to the U.S. in June?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-19918"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-06-01",
+        "date_to": "1987-06-30"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-19918",
+          "title": "ISRAEL MINISTER SEES INCREASED EXPORTS TO U.S.",
+          "distance": 0.23864901065826416
+        },
+        {
+          "document_id": "reuters-19918",
+          "title": "ISRAEL MINISTER SEES INCREASED EXPORTS TO U.S.",
+          "distance": 0.27083027362823486
+        },
+        {
+          "document_id": "reuters-19918",
+          "title": "ISRAEL MINISTER SEES INCREASED EXPORTS TO U.S.",
+          "distance": 0.3304523229598999
+        },
+        {
+          "document_id": "reuters-17454",
+          "title": "ISRAELI BANK SAYS ELECTION COULD HARM ECONOMY",
+          "distance": 0.4771850109100342
+        }
+      ]
+    },
+    {
+      "id": "q0038",
+      "question": "How much did MCA pay for WOR-TV from GenCorp's RKO General?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-13077"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-13077",
+          "title": "GENCORP <GY> UNIT COMPLETES WOR-TV SALE",
+          "distance": 0.23363614082336426
+        },
+        {
+          "document_id": "reuters-6410",
+          "title": "AFG <AFG>, WAGNER/BROWN BID FOR GENCORP <GY>",
+          "distance": 0.301141619682312
+        },
+        {
+          "document_id": "reuters-9638",
+          "title": "GENCORP <GY> BID COULD BE RAISED, GROUP SAYS",
+          "distance": 0.3517453670501709
+        },
+        {
+          "document_id": "reuters-6928",
+          "title": "GENCORP <GY> BIDDER PLANS SALE OF AEROSPACE UNIT",
+          "distance": 0.35701072216033936
+        }
+      ]
+    },
+    {
+      "id": "q0039",
+      "question": "What did the Bundesbank say about West Germany's trade surplus in 1987?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-17243"
+      ],
+      "rank": 2,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-6593",
+          "title": "GERMAN RESEARCH INSTITUTE LOWERS GROWTH FORECAST",
+          "distance": 0.23540031909942627
+        },
+        {
+          "document_id": "reuters-17243",
+          "title": "GERMAN TRADE SURPLUS SHOULD NARROW, BUNDESBANK SAYS",
+          "distance": 0.24643385410308838
+        },
+        {
+          "document_id": "reuters-19617",
+          "title": "GERMAN 1987 TRADE SURPLUS SEEN STAYING HIGH",
+          "distance": 0.2497107982635498
+        },
+        {
+          "document_id": "reuters-17243",
+          "title": "GERMAN TRADE SURPLUS SHOULD NARROW, BUNDESBANK SAYS",
+          "distance": 0.2964925765991211
+        }
+      ]
+    },
+    {
+      "id": "q0040",
+      "question": "What initial dividend did VMS Strategic Land Trust declare on April 1?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-11933",
+        "reuters-12045"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-04-01",
+        "date_to": "1987-04-02"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-12045",
+          "title": "VMS STRATEGIC <VLANS> SETS INITIAL DIVIDEND",
+          "distance": 0.19684720039367676
+        },
+        {
+          "document_id": "reuters-11933",
+          "title": "VMS STRATEGIC LAND TRUST <VLANS> SETS PAYOUT",
+          "distance": 0.19702976942062378
+        },
+        {
+          "document_id": "reuters-12674",
+          "title": "VMS SHORT TERM INCOME TRUST <VST> 4TH QTR NET",
+          "distance": 0.4315069317817688
+        },
+        {
+          "document_id": "reuters-12672",
+          "title": "VMS HOTEL INVESTMENT TRUST <VHT> 4TH QTR NET",
+          "distance": 0.44441157579421997
+        }
+      ]
+    },
+    {
+      "id": "q0041",
+      "question": "What were Dow Chemical's third-quarter net earnings on October 20?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-20138"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-10-20",
+        "date_to": "1987-10-21"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-20138",
+          "title": "DOW CHEMICAL CO <DOW> 3RD QTR NET",
+          "distance": 0.21227216720581055
+        },
+        {
+          "document_id": "reuters-20157",
+          "title": "DOW CHEMICAL <DOW> SEES RECORD YEAR",
+          "distance": 0.314985990524292
+        },
+        {
+          "document_id": "reuters-20476",
+          "title": "DYNCORP <DYN> 3RD QTR NET",
+          "distance": 0.42397356033325195
+        },
+        {
+          "document_id": "reuters-20715",
+          "title": "SCHERING-PLOUGH CORP <SDG> 3RD QTR NET",
+          "distance": 0.44794899225234985
+        }
+      ]
+    },
+    {
+      "id": "q0042",
+      "question": "What did Jacques Chirac say about U.S. support for the Paris currency pact on April 1?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-12145"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-04-01",
+        "date_to": "1987-04-02"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-12145",
+          "title": "CHIRAC SAYS FRANCE RESOLVED TO SUPPORT CURRENCY PACT",
+          "distance": 0.22011232376098633
+        },
+        {
+          "document_id": "reuters-12650",
+          "title": "EYSKENS SAYS US PRIME RISES WILL AID CURRENCIES",
+          "distance": 0.4136888384819031
+        },
+        {
+          "document_id": "reuters-12653",
+          "title": "BELGIUM SAYS U.S PRIME RISES WILL AID CURRENCIES",
+          "distance": 0.4136888384819031
+        },
+        {
+          "document_id": "reuters-12145",
+          "title": "CHIRAC SAYS FRANCE RESOLVED TO SUPPORT CURRENCY PACT",
+          "distance": 0.4299362301826477
+        }
+      ]
+    },
+    {
+      "id": "q0043",
+      "question": "How much U.S. cotton will Taiwan buy on June 16?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-18436"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-06-16",
+        "date_to": "1987-06-17"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-18436",
+          "title": "TAIWAN MISSION TO BUY 410,000 BALES U.S. COTTON",
+          "distance": 0.28597384691238403
+        },
+        {
+          "document_id": "reuters-18429",
+          "title": "TAIWAN RAISES SUGAR OUTPUT TARGET FOR 1987/88",
+          "distance": 0.49864786863327026
+        },
+        {
+          "document_id": "reuters-18461",
+          "title": "TAIWAN PARLIAMENT BACKS FREE CAPITAL OUTFLOWS",
+          "distance": 0.521699070930481
+        },
+        {
+          "document_id": "reuters-18461",
+          "title": "TAIWAN PARLIAMENT BACKS FREE CAPITAL OUTFLOWS",
+          "distance": 0.5993732810020447
+        }
+      ]
+    },
+    {
+      "id": "q0044",
+      "question": "Why does Murray Ohio Manufacturing expect higher first quarter earnings?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-6732",
+        "reuters-6762"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-01-01",
+        "date_to": "1987-03-31"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-6762",
+          "title": "MURRAY OHIO <MYO> SEES HIGHER 1ST QTR EARNINGS",
+          "distance": 0.19550621509552002
+        },
+        {
+          "document_id": "reuters-6732",
+          "title": "MURRAY OHIO <MUR> SEES HIGHER FIRST QUARTER NET",
+          "distance": 0.20881563425064087
+        },
+        {
+          "document_id": "reuters-12",
+          "title": "OHIO MATTRESS <OMT> MAY HAVE LOWER 1ST QTR NET",
+          "distance": 0.4095492362976074
+        },
+        {
+          "document_id": "reuters-11395",
+          "title": "ROCKY MOUNT <RMUC> EXPECTS PROFIT IN FIRST QTR",
+          "distance": 0.47750210762023926
+        }
+      ]
+    },
+    {
+      "id": "q0045",
+      "question": "What coffee quota proposal will ICO producers present on February 26?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-42"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-02-26",
+        "date_to": "1987-02-27"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-42",
+          "title": "ICO PRODUCERS TO PRESENT NEW COFFEE PROPOSAL",
+          "distance": 0.21895301342010498
+        },
+        {
+          "document_id": "reuters-75",
+          "title": "ICO EXPORTERS TO MODIFY NEW PROPOSAL",
+          "distance": 0.2680029273033142
+        },
+        {
+          "document_id": "reuters-1",
+          "title": "BAHIA COCOA REVIEW",
+          "distance": 0.6108823418617249
+        },
+        {
+          "document_id": "reuters-105",
+          "title": "SUGAR QUOTA IMPORTS DETAILED -- USDA",
+          "distance": 0.6549592614173889
+        }
+      ]
+    },
+    {
+      "id": "q0046",
+      "question": "What spirits business is Corby Distilleries buying in Canada on October 20?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-20037"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-10-20",
+        "date_to": "1987-10-21"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-20037",
+          "title": "CORBY DISTILLERIES TO EXPAND IN CANADA",
+          "distance": 0.2596108913421631
+        },
+        {
+          "document_id": "reuters-20312",
+          "title": "NATIONAL DISTILLERS <DR> REPURCHASING SHARES",
+          "distance": 0.5609891414642334
+        },
+        {
+          "document_id": "reuters-20251",
+          "title": "KELSEY-HAYES CANADA LTD <KEL.TO> NINE MTHS NET",
+          "distance": 0.5898334980010986
+        },
+        {
+          "document_id": "reuters-20224",
+          "title": "DOMTAR <DTC> WITHDRAWS STOCK OFFERING",
+          "distance": 0.6030058264732361
+        }
+      ]
+    },
+    {
+      "id": "q0047",
+      "question": "Why did GTE Corp's net income decline because of U.S. Sprint?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-16481"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-16481",
+          "title": "GTE <GTE> CITES LOSS OF SPRINT",
+          "distance": 0.16570520401000977
+        },
+        {
+          "document_id": "reuters-20292",
+          "title": "GTE <GTE> ENCOURAGED BY US SPRINT'S SMALLER LOSS",
+          "distance": 0.22888904809951782
+        },
+        {
+          "document_id": "reuters-16496",
+          "title": "UNITED TELECOM <UT> REPORTS US SPRINT LOSS",
+          "distance": 0.2593226432800293
+        },
+        {
+          "document_id": "reuters-20241",
+          "title": "GTE CORP <GTE> 3RD QTR NET",
+          "distance": 0.30713701248168945
+        }
+      ]
+    },
+    {
+      "id": "q0048",
+      "question": "How much cargo passed through Abidjan port, and how did exports and imports change?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-10394"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-10394",
+          "title": "ABIDJAN PORT ACTIVITY RISES",
+          "distance": 0.20318663120269775
+        },
+        {
+          "document_id": "reuters-1889",
+          "title": "IVORY COAST SAYS COFFEE PRICE FALL SHORT-LIVED",
+          "distance": 0.48160386085510254
+        },
+        {
+          "document_id": "reuters-19570",
+          "title": "IVORY COAST WEATHER NO PROBLEM FOR 1986/87 CROPS",
+          "distance": 0.48473918437957764
+        },
+        {
+          "document_id": "reuters-8437",
+          "title": "WEST AFRICA NATIONS RECEIVE MOST EC EXPORT AID",
+          "distance": 0.5028104186058044
+        }
+      ]
+    },
+    {
+      "id": "q0049",
+      "question": "How much in EC financial packages did ministers approve for Mediterranean states on March 31?",
+      "style": "dated",
+      "expected_doc_ids": [
+        "reuters-11315"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {
+        "date_from": "1987-03-31",
+        "date_to": "1987-04-01"
+      },
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-11315",
+          "title": "EC APPROVES MEDITERRANEAN FINANCIAL PACKAGES",
+          "distance": 0.23061257600784302
+        },
+        {
+          "document_id": "reuters-11592",
+          "title": "DUTCH MINISTER ATTACKS W. GERMAN FARM POSITION",
+          "distance": 0.5148056745529175
+        },
+        {
+          "document_id": "reuters-11541",
+          "title": "EC MINISTER SEES OILS TAX STILL IN NEGOTIATION",
+          "distance": 0.5505138039588928
+        },
+        {
+          "document_id": "reuters-11862",
+          "title": "CEREALS MCAS TO BE UNCHANGED NEXT WEEK",
+          "distance": 0.5527368783950806
+        }
+      ]
+    },
+    {
+      "id": "q0050",
+      "question": "What did Richard Lyng say about U.S. meat and poultry inspection?",
+      "style": "undated",
+      "expected_doc_ids": [
+        "reuters-12618"
+      ],
+      "rank": 1,
+      "filtered_out": false,
+      "applied_filters": {},
+      "boosted_topic": null,
+      "retrieved": [
+        {
+          "document_id": "reuters-12618",
+          "title": "LYNG DEFENDS U.S. MEAT INSPECTION SYSTEM",
+          "distance": 0.21369892358779907
+        },
+        {
+          "document_id": "reuters-15254",
+          "title": "U.S. MEAT, POULTRY INSPECTION CALLED FAULTY",
+          "distance": 0.33737778663635254
+        },
+        {
+          "document_id": "reuters-15254",
+          "title": "U.S. MEAT, POULTRY INSPECTION CALLED FAULTY",
+          "distance": 0.3434085249900818
+        },
+        {
+          "document_id": "reuters-15254",
+          "title": "U.S. MEAT, POULTRY INSPECTION CALLED FAULTY",
+          "distance": 0.36536741256713867
+        }
+      ]
+    }
+  ]
+}

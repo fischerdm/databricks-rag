@@ -1,0 +1,161 @@
+{
+  "config": {
+    "golden": "evals/golden.jsonl",
+    "n_cases": 2,
+    "top_k": 4,
+    "auto_filters": true,
+    "topic_mode": "off",
+    "reviewed_only": false,
+    "ids": "q0012,q0043",
+    "chat_model": "gpt-4o-mini",
+    "judge_model": "claude-sonnet-5-5",
+    "filter_model": "gpt-5.4-nano",
+    "embedding_model": "text-embedding-3-small",
+    "mlflow_run_id": "58f38d87610a4f5eb488dbc5964c69e5"
+  },
+  "summary": {
+    "n": 2,
+    "retrieved": 0.5,
+    "all_facts_verbatim": 0.5,
+    "all_facts_judged": 0.5,
+    "grounded": 1.0,
+    "facts": 3,
+    "facts_verbatim": 0.6666666666666666,
+    "facts_judged": 0.6666666666666666,
+    "errors": 0
+  },
+  "by_retrieval": {
+    "expected retrieved": {
+      "n": 1,
+      "retrieved": 1.0,
+      "all_facts_verbatim": 1.0,
+      "all_facts_judged": 1.0,
+      "grounded": 1.0,
+      "facts": 1,
+      "facts_verbatim": 1.0,
+      "facts_judged": 1.0,
+      "errors": 0
+    },
+    "expected not retrieved": {
+      "n": 1,
+      "retrieved": 0.0,
+      "all_facts_verbatim": 0.0,
+      "all_facts_judged": 0.0,
+      "grounded": 1.0,
+      "facts": 2,
+      "facts_verbatim": 0.5,
+      "facts_judged": 0.5,
+      "errors": 0
+    }
+  },
+  "results": [
+    {
+      "id": "q0012",
+      "question": "What caused the Herald of Free Enterprise to capsize near Zeebrugge?",
+      "style": "undated",
+      "key_facts": [
+        "door",
+        "open"
+      ],
+      "expected_doc_ids": [
+        "reuters-17318"
+      ],
+      "rank": null,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-2819",
+          "distance": 0.29060572385787964
+        },
+        {
+          "document_id": "reuters-2853",
+          "distance": 0.35148489475250244
+        },
+        {
+          "document_id": "reuters-2968",
+          "distance": 0.3565084934234619
+        },
+        {
+          "document_id": "reuters-3440",
+          "distance": 0.3733479976654053
+        }
+      ],
+      "answer": "The exact cause of the Herald of Free Enterprise capsizing is not definitively stated in the provided context. However, preliminary reports suggested that water may have flooded the car decks through the bow doors, and there was also a possibility that the ferry had been holed. An investigation was initiated to determine the exact reasons for the incident [3].",
+      "trace_id": "tr-6908ee546ea796b6633f0f73332ff795",
+      "facts": [
+        {
+          "fact": "door",
+          "verbatim": true,
+          "stated": true,
+          "quote": "water may have flooded the car decks through the bow doors",
+          "quote_found": true,
+          "reason": "The answer mentions bow doors as the route of flooding."
+        },
+        {
+          "fact": "open",
+          "verbatim": false,
+          "stated": false,
+          "quote": "",
+          "quote_found": false,
+          "reason": "The answer never says the doors were left open; it only says water may have flooded through the bow doors."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": false,
+      "grounded": "yes",
+      "groundedness_rationale": "The claim says the exact cause is not definitively stated, and the document agrees: the third article (reuters-2968) says a preliminary investigation had started and Lord Brabazon said it was 'too early to say what happened.' The claim says preliminary reports suggested water may have flooded the car decks through the bow doors. The document says 'Initial reports spoke of water flooding the car decks through the bow doors.' The claim says the ferry may have been holed. The document says the owners' spokesman said it was 'also possible the ferry had been holed.' The claim says an investigation was initiated to determine the reasons. The document confirms a preliminary investigation had started into why the ferry capsized. The earlier article mentions a collision reported by ANP, which the claim does not mention, but omitting it does not contradict the claim. The claim's citation to [3] matches the third document. All statements are supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0043",
+      "question": "How much U.S. cotton did a Taiwan mission plan to buy, as reported on June 16?",
+      "style": "dated",
+      "key_facts": [
+        "410,000 bales"
+      ],
+      "expected_doc_ids": [
+        "reuters-18436"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-06-16",
+        "date_to": "1987-06-17"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-18436",
+          "distance": 0.1940637230873108
+        },
+        {
+          "document_id": "reuters-18429",
+          "distance": 0.5086278915405273
+        },
+        {
+          "document_id": "reuters-18461",
+          "distance": 0.5675879120826721
+        },
+        {
+          "document_id": "reuters-18431",
+          "distance": 0.6085830926895142
+        }
+      ],
+      "answer": "A Taiwan mission planned to buy 410,000 bales of U.S. cotton, worth about 110 million U.S. dollars, as reported on June 16, 1987 [1].",
+      "trace_id": "tr-4f6c1f34f765000034e5779579725920",
+      "facts": [
+        {
+          "fact": "410,000 bales",
+          "verbatim": true,
+          "stated": true,
+          "quote": "410,000 bales of U.S. cotton",
+          "quote_found": true,
+          "reason": "The answer explicitly gives the quantity as 410,000 bales."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document, dated 1987-06-16, is headlined 'TAIWAN MISSION TO BUY 410,000 BALES U.S. COTTON' and says a Taiwan mission plans to buy 410,000 bales of U.S. cotton worth about 110 mln U.S. dollars. The claim's quantity (410,000 bales), value (about 110 million U.S. dollars), and date (June 16, 1987) all match the document, so every part of the claim is supported.",
+      "errors": {}
+    }
+  ]
+}

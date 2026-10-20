@@ -90,6 +90,21 @@ A golden dataset is a fixed, reviewed set of questions with known right answers 
 
 **Not implemented yet:** a chunk-level retrieval check. hit@k counts an article as found when any of its chunks is retrieved, even if the chunk holding the answer is not (q0021). Checking whether each key fact appears in the retrieved chunks would catch that for free, like the normalized fact check; DeepEval's contextual recall (usable through MLflow) is the LLM-judged version of the same idea. Note that it measures retrieval, not the answer, so it complements groundedness rather than replacing it.
 
+### Review app
+
+<p align="center">
+  <img src="docs/images/golden-1.png" alt="Review app: a golden case with its key facts checked and highlighted in the expected article" width="49%">
+  <img src="docs/images/golden-2.png" alt="Review app: the scored answer with the judge's quotes, the fact checks and the evaluation runs" width="49%">
+</p>
+
+Generated cases are drafts; every one of the 50 was reviewed by hand in [evals/review_app.py](evals/review_app.py), a Streamlit app built for that job. It shows one case at a time, with the editable fields next to the full text of the expected articles, and saves straight back to `golden.jsonl`, so `git diff` shows what the review changed.
+
+- **Rules checked as you edit:** each key fact gets ✓ or ✗ for appearing verbatim in every expected article and for adding something beyond the question, and is highlighted in the articles. Saving runs the full rule set of `evals.checks`, including the question's dated/undated style.
+- **Possible duplicates:** Reuters often ran a story twice. Articles close to an expected one are listed with the key facts they lack, so a reviewer can add a true duplicate to `expected_doc_ids` instead of counting it as a miss.
+- **Driven by the evaluation runs:** 'Misses in latest runs' shows the cases where retrieval did not rank an expected article first, with the articles it retrieved instead, each one click away from `expected_doc_ids`. 'Answers to check' shows the cases where the free fact checks and the judge disagree; the answer is shown with the verbatim matches in yellow and the judge's quotes in blue, next to the groundedness verdict.
+
+**Read-only demo.** The app can also run without the vector index or an API key, as on [Streamlit Community Cloud](https://streamlit.io/cloud): with `REVIEW_DEMO=1`, editing is disabled and the distances, duplicate candidates and evaluation runs come from a snapshot in [evals/demo/](evals/demo/). To refresh the snapshot after changing cases or adding runs, run `.venv/bin/python -m evals.build_demo` locally and commit `evals/demo/`. To deploy, create an app from this repository with main file `evals/review_app.py` and the secret `REVIEW_DEMO = "1"`. Streamlit Cloud then installs only [evals/requirements.txt](evals/requirements.txt), and the theme in [.streamlit/config.toml](.streamlit/config.toml) matches the chat UI.
+
 ## Endpoints
 
 | Method | Path      | Description                                                        |

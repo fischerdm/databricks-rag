@@ -7,6 +7,10 @@ Shows one case at a time: the editable fields on the left, the full text of the 
 articles on the right with the key facts highlighted, and below them the articles the latest
 evaluation runs retrieved, each with a button to add it to expected_doc_ids.
 Saving writes straight back to evals/golden.jsonl, so `git diff` shows what the review changed.
+
+With REVIEW_DEMO=1 (as deployed on Streamlit Community Cloud), it is a read-only demo: editing is
+disabled, and the distances, duplicate candidates and runs come from the snapshot in evals/demo/
+that evals/build_demo.py writes, so neither the vector index nor an OpenAI key is needed.
 """
 
 import html
@@ -37,7 +41,9 @@ from evals.checks import (  # noqa: E402
 from evals.duplicates import MAX_DISTANCE  # noqa: E402
 from scripts.ingest_reuters import download_archive, iter_articles  # noqa: E402
 
-RUNS_DIR = Path("evals/runs")
+DEMO = os.environ.get("REVIEW_DEMO") == "1"
+DEMO_DIR = Path("evals/demo")
+RUNS_DIR = DEMO_DIR / "runs" if DEMO else Path("evals/runs")
 STYLES = ["dated", "undated"]
 
 ADD_HELP = """**Add a retrieved article to the expected articles?**
@@ -106,6 +112,12 @@ def expected_distances(question: str, document_ids: tuple[str, ...]) -> dict[str
     from app.services import vector  # imported here: needs OPENAI_API_KEY, only the distances use it
 
     return vector.document_distances(question, list(document_ids))
+
+
+@st.cache_data
+def demo_data() -> dict:
+    """The snapshot of distances and duplicate candidates per case id (evals/build_demo.py)."""
+    return json.loads((DEMO_DIR / "data.json").read_text())
 
 
 def load_runs(auto_filters: bool) -> list[tuple[str, dict[str, dict]]]:
@@ -204,7 +216,9 @@ def filter_check(applied: dict, metadata: dict) -> str:
     return " · ".join(parts) or "no filters applied"
 
 
-JUDGE_MARK = '<mark style="background-color: #a5d8ff">'
+# Dark text on both, so the marks stay readable in the dark theme (.streamlit/config.toml).
+FACT_MARK = '<mark style="background-color: #fff176; color: #1a1a1a">'
+JUDGE_MARK = '<mark style="background-color: #a5d8ff; color: #1a1a1a">'
 
 
 def highlight(text: str, facts: list[str], quotes: list[str] = (), monospace: bool = True) -> str:
@@ -222,7 +236,7 @@ def highlight(text: str, facts: list[str], quotes: list[str] = (), monospace: bo
     for i in range(1, len(text) + 1):
         if i == len(text) or kinds[i] != kinds[start]:
             segment = html.escape(text[start:i])
-            opening = {"fact": "<mark>", "quote": JUDGE_MARK}.get(kinds[start])
+            opening = {"fact": FACT_MARK, "quote": JUDGE_MARK}.get(kinds[start])
             parts.append(f"{opening}{segment}</mark>" if opening else segment)
             start = i
     font = "font-family: ui-monospace, monospace; font-size: 0.85rem; " if monospace else ""
@@ -331,6 +345,7 @@ def duplicate_expander(cid: str, candidate: dict, facts: list[str], nested: bool
             key=f"dup_{cid}_{doc_id}",
             on_click=add_expected,
             args=(cid, doc_id),
+            disabled=DEMO,
             help=(
                 f"Lacks key facts {missing}: adding it will be flagged until the facts or the "
                 "expected articles are adjusted."
@@ -363,6 +378,11 @@ def has_answer_issue(cid: str) -> bool:
 
 with st.sidebar:
     st.header("Golden dataset")
+    if DEMO:
+        st.info(
+            f"Read-only demo with a snapshot from {demo_data()['built']}. Run the app locally to review "
+            "and edit cases: see the [README](https://github.com/fischerdm/fastapi-rag-boilerplate#review-app)."
+        )
     n_reviewed = sum(bool(c.get("reviewed")) for c in cases)
     st.progress(n_reviewed / len(cases) if cases else 0.0, text=f"{n_reviewed} of {len(cases)} reviewed")
     view = st.radio("Show", ["Unreviewed", "Misses in latest runs", "Answers to check", "All"])
@@ -422,12 +442,13 @@ st.subheader(f"{cid} · {'reviewed' if case.get('reviewed') else 'not reviewed'}
 left, right = st.columns([2, 3], gap="large")
 
 with left:
-    st.text_input("Question", key=f"question_{cid}")
+    st.text_input("Question", key=f"question_{cid}", disabled=DEMO)
     st.radio(
         "Question style",
         STYLES,
         key=f"style_{cid}",
         horizontal=True,
+        disabled=DEMO,
         help="Describes the question, not the article (every article has a date).\n\n"
         "**dated**: the question mentions a date or period, such as 'on March 24', "
         "'in April' or 'in Jan/Feb 1987'.\n\n"
@@ -435,11 +456,12 @@ with left:
         "Only a dated question gives filter extraction a date to work with, so scores are "
         "reported per style.",
     )
-    st.text_area("Reference answer", key=f"answer_{cid}", height=110)
+    st.text_area("Reference answer", key=f"answer_{cid}", height=110, disabled=DEMO)
     st.text_area(
         "Key facts (one per line)",
         key=f"facts_{cid}",
         height=90,
+        disabled=DEMO,
         help="What a correct answer must add beyond the question. Not repeated from the question, "
         "as short as possible, verbatim from the article, essential. Key facts are the minimal "
         "core without which the answer is wrong or incomplete. ✓/✗ below checks 'not repeated' "
@@ -459,23 +481,34 @@ with left:
         else:
             st.caption(f"✓ {fact}")
 
-    st.text_area("Expected article ids (one per line)", key=f"expected_{cid}", height=90)
-    st.text_area("Notes (what you changed and why)", key=f"notes_{cid}", height=70)
+    st.text_area("Expected article ids (one per line)", key=f"expected_{cid}", height=90, disabled=DEMO)
+    st.text_area("Notes (what you changed and why)", key=f"notes_{cid}", height=70, disabled=DEMO)
 
     b1, b2, b3 = st.columns(3)
-    b1.button("Save", on_click=save, args=(cid,), use_container_width=True)
-    b2.button("✅ Reviewed, next", on_click=save, args=(cid, True, next_id), type="primary", use_container_width=True)
-    b3.button("Mark unreviewed", on_click=save, args=(cid, False), use_container_width=True)
-    st.caption(f"Case {position + 1} of {len(ids)} in this view. Saving writes to {GOLDEN}.")
+    b1.button("Save", on_click=save, args=(cid,), use_container_width=True, disabled=DEMO)
+    b2.button(
+        "✅ Reviewed, next",
+        on_click=save,
+        args=(cid, True, next_id),
+        type="primary",
+        use_container_width=True,
+        disabled=DEMO,
+    )
+    b3.button("Mark unreviewed", on_click=save, args=(cid, False), use_container_width=True, disabled=DEMO)
+    saving = "Read-only demo: nothing is saved." if DEMO else f"Saving writes to {GOLDEN}."
+    st.caption(f"Case {position + 1} of {len(ids)} in this view. {saving}")
 
 with right:
     facts = lines(state[f"facts_{cid}"])
     known = tuple(d for d in lines(state[f"expected_{cid}"]) if d in articles())
-    try:
-        distances = expected_distances(state[f"question_{cid}"].strip(), known)
-    except Exception as exc:  # the review works without distances, e.g. offline
-        distances = {}
-        st.caption(f"Distances unavailable: {exc}")
+    if DEMO:
+        distances = demo_data()["distances"].get(cid, {})
+    else:
+        try:
+            distances = expected_distances(state[f"question_{cid}"].strip(), known)
+        except Exception as exc:  # the review works without distances, e.g. offline
+            distances = {}
+            st.caption(f"Distances unavailable: {exc}")
     for i, doc_id in enumerate(lines(state[f"expected_{cid}"])):
         if doc_id not in articles():
             st.warning(f"Unknown article id: {doc_id}")
@@ -490,11 +523,14 @@ with right:
             st.markdown(highlight(content, facts), unsafe_allow_html=True)
 
     st.markdown("**Possible duplicates**", help=DUPLICATES_HELP)
-    try:
-        found = duplicate_candidates(tuple(expected_ids), tuple(facts))
-    except Exception as exc:  # the review works without suggestions, e.g. if the index is missing
-        found = []
-        st.caption(f"Duplicate search unavailable: {exc}")
+    if DEMO:
+        found = demo_data()["duplicates"].get(cid, [])
+    else:
+        try:
+            found = duplicate_candidates(tuple(expected_ids), tuple(facts))
+        except Exception as exc:  # the review works without suggestions, e.g. if the index is missing
+            found = []
+            st.caption(f"Duplicate search unavailable: {exc}")
     complete = [c for c in found if not c["missing"]]
     partial = [c for c in found if c["missing"]]
     if not found:
@@ -612,6 +648,7 @@ for column, (label, label_runs) in zip(run_columns, runs.items(), strict=True):
                         key=f"add_{label}_{cid}_{doc_id}",
                         on_click=add_expected,
                         args=(cid, doc_id),
+                        disabled=DEMO,
                         help="Only if a user would be fully satisfied with this article alone. "
                         "Adds it to the field above; click Save to write it.",
                     )

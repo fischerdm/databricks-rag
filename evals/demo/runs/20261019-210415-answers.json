@@ -1,0 +1,2645 @@
+{
+  "config": {
+    "golden": "evals/golden.jsonl",
+    "n_cases": 50,
+    "top_k": 4,
+    "auto_filters": true,
+    "topic_mode": "off",
+    "reviewed_only": false,
+    "chat_model": "gpt-4o-mini",
+    "judge_model": "claude-sonnet-5-5",
+    "filter_model": "gpt-5.4-nano",
+    "embedding_model": "text-embedding-3-small",
+    "mlflow_run_id": "a35aa1f58d4e484594a5613004439293"
+  },
+  "summary": {
+    "n": 50,
+    "retrieved": 0.94,
+    "all_facts_verbatim": 0.54,
+    "all_facts_judged": 0.96,
+    "grounded": 1.0,
+    "facts": 63,
+    "facts_verbatim": 0.5714285714285714,
+    "facts_judged": 0.9682539682539683,
+    "errors": 0
+  },
+  "by_retrieval": {
+    "expected retrieved": {
+      "n": 47,
+      "retrieved": 1.0,
+      "all_facts_verbatim": 0.5531914893617021,
+      "all_facts_judged": 1.0,
+      "grounded": 1.0,
+      "facts": 60,
+      "facts_verbatim": 0.5833333333333334,
+      "facts_judged": 1.0,
+      "errors": 0
+    },
+    "expected not retrieved": {
+      "n": 3,
+      "retrieved": 0.0,
+      "all_facts_verbatim": 0.3333333333333333,
+      "all_facts_judged": 0.3333333333333333,
+      "grounded": 1.0,
+      "facts": 3,
+      "facts_verbatim": 0.3333333333333333,
+      "facts_judged": 0.3333333333333333,
+      "errors": 0
+    }
+  },
+  "results": [
+    {
+      "id": "q0001",
+      "question": "What weather will delay sugar beet planting in the Soviet Union?",
+      "style": "undated",
+      "key_facts": [
+        "damp, chilly"
+      ],
+      "expected_doc_ids": [
+        "reuters-16975"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-16975",
+          "distance": 0.2105119228363037
+        },
+        {
+          "document_id": "reuters-17123",
+          "distance": 0.2811918258666992
+        },
+        {
+          "document_id": "reuters-19262",
+          "distance": 0.3418780565261841
+        },
+        {
+          "document_id": "reuters-15462",
+          "distance": 0.3432486057281494
+        }
+      ],
+      "answer": "Damp, chilly weather will delay sugar beet planting in the Soviet Union. Specifically, there are cool temperatures and occurrences of rain and snow showers in the region, with additional rain expected to linger, which hampers planting progress [1], [2].",
+      "trace_id": "tr-1ac0cc2c67495939819cd38b51344329",
+      "facts": [
+        {
+          "fact": "damp, chilly",
+          "verbatim": true,
+          "stated": true,
+          "quote": "Damp, chilly weather will delay sugar beet planting in the Soviet Union.",
+          "quote_found": true,
+          "reason": "The answer explicitly says damp, chilly weather will delay planting."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document (reuters-16975) says that damp, chilly weather will delay planting in all Soviet beet areas. It also reports that eastern Soviet beet areas had rain and snow showers, and that showers or snow flurries will linger with more rain likely, which supports the claim of additional rain expected to linger. The second document (reuters-17123) says most Soviet beet-growing regions still had cool weather with night frosts, so the cool temperatures are also supported. The claim's description of cool temperatures, rain and snow showers, and lingering rain hampering planting is consistent with the documents. The citations [1] and [2] correspond to the first two documents. All parts of the claim are supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0002",
+      "question": "What did Aldo Hofmeister say about the quality of INRO buffer stock rubber?",
+      "style": "undated",
+      "key_facts": [
+        "acceptable"
+      ],
+      "expected_doc_ids": [
+        "reuters-21557"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-21557",
+          "distance": 0.25876927375793457
+        },
+        {
+          "document_id": "reuters-21557",
+          "distance": 0.30799436569213867
+        },
+        {
+          "document_id": "reuters-21557",
+          "distance": 0.37216800451278687
+        },
+        {
+          "document_id": "reuters-13462",
+          "distance": 0.50419682264328
+        }
+      ],
+      "answer": "Aldo Hofmeister stated that tests had shown the quality of rubber in stock was acceptable and that rubber stored in proper conditions does not deteriorate. He acknowledged some consumers were wary of buying it, but emphasized that the rubber was holding up well from a condition and quality standpoint. He also mentioned that the quality of five to six-year-old rubber in stock was a major concern for consumers, and he received good interest for the rubber despite the concerns from Japanese traders who wanted to try it before committing to purchase [1][2].",
+      "trace_id": "tr-03f04cd8451cbcc692e19da09a0957d7",
+      "facts": [
+        {
+          "fact": "acceptable",
+          "verbatim": true,
+          "stated": true,
+          "quote": "tests had shown the quality of rubber in stock was acceptable",
+          "quote_found": true,
+          "reason": "The answer says tests showed the stock rubber quality was acceptable."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document says Hofmeister stated tests showed the quality of rubber in stock was acceptable, and he acknowledged that some consumers were wary of buying it. It quotes him saying the rubber is holding up well from a condition and quality standpoint and that rubber stored in proper conditions does not deteriorate. It also says he said the quality of five to six-year old rubber was uppermost in consumers' minds, which matches the claim's 'major concern for consumers'. He said 'We have received good interest for the rubber. I understand the Japanese concern. Many consumers want to try the rubber before they carry on buying.' This matches the claim's point about good interest despite concerns from Japanese traders who want to try it first. The claim's wording is slightly loose in attributing the wish to try it to 'Japanese traders' rather than 'many consumers', but the document links this to the Japanese concern, so it is reasonably supported. All parts of the claim are supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0003",
+      "question": "How much cocoa did the Ghana Cocoa Board purchase in the 24th week on April 1?",
+      "style": "dated",
+      "key_facts": [
+        "214 tonnes"
+      ],
+      "expected_doc_ids": [
+        "reuters-11811"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-04-01",
+        "date_to": "1987-04-02"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-11811",
+          "distance": 0.21697574853897095
+        },
+        {
+          "document_id": "reuters-12426",
+          "distance": 0.5357308983802795
+        },
+        {
+          "document_id": "reuters-11893",
+          "distance": 0.5664827823638916
+        },
+        {
+          "document_id": "reuters-12543",
+          "distance": 0.5715314149856567
+        }
+      ],
+      "answer": "The Ghana Cocoa Board purchased 214 tonnes of cocoa in the 24th week, ended March 19, of the 1986/87 main crop season [1].",
+      "trace_id": "tr-d4649e7c29684d8d94cace74c6f3ac1d",
+      "facts": [
+        {
+          "fact": "214 tonnes",
+          "verbatim": true,
+          "stated": true,
+          "quote": "purchased 214 tonnes of cocoa in the 24th week",
+          "quote_found": true,
+          "reason": "The answer gives the same figure of 214 tonnes for the 24th week."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document, dated 1987-04-01, says the Ghana Cocoa Board purchased 214 tonnes of cocoa in the 24th week, ended March 19, of the 1986/87 main crop season. The claim matches this: 214 tonnes, the 24th week, the end date of March 19, and the 1986/87 main crop season. The document's mention of March 27 refers to the previous season's 24th week and does not conflict with the claim. The claim is supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0004",
+      "question": "What export registration price did Colombia announce for coffee?",
+      "style": "undated",
+      "key_facts": [
+        "1.10 dlr per lb"
+      ],
+      "expected_doc_ids": [
+        "reuters-4603"
+      ],
+      "rank": 3,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-5002",
+          "distance": 0.2709328532218933
+        },
+        {
+          "document_id": "reuters-15357",
+          "distance": 0.2751968502998352
+        },
+        {
+          "document_id": "reuters-4603",
+          "distance": 0.276145339012146
+        },
+        {
+          "document_id": "reuters-21177",
+          "distance": 0.28246790170669556
+        }
+      ],
+      "answer": "Colombia announced a lower export registration price, or reintegro, of 1.10 dollars per pound ex-dock New York for coffee [3].",
+      "trace_id": "tr-efb117136c5f2ffa2bee7fc1a5f70d9b",
+      "facts": [
+        {
+          "fact": "1.10 dlr per lb",
+          "verbatim": false,
+          "stated": true,
+          "quote": "1.10 dollars per pound ex-dock New York",
+          "quote_found": true,
+          "reason": "The answer gives the same price, 1.10 dollars per pound, in different wording."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The third document (reuters-4603, dated 1987-03-12) states that finance minister Cesar Gaviria announced \"a lower export registration price, or reintegro, of 1.10 dlr per lb ex-dock New York\". The claim says Colombia announced a lower export registration price, or reintegro, of 1.10 dollars per pound ex-dock New York for coffee, which matches this. The citation [3] also corresponds to the third document. All parts of the claim are supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0005",
+      "question": "What cash bid did Alcan Australia make for Alcan New Zealand shares?",
+      "style": "undated",
+      "key_facts": [
+        "39.3 mln N.Z. Dlr",
+        "1.80 N.Z. Dlrs"
+      ],
+      "expected_doc_ids": [
+        "reuters-10335"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-10335",
+          "distance": 0.16009241342544556
+        },
+        {
+          "document_id": "reuters-10335",
+          "distance": 0.26897990703582764
+        },
+        {
+          "document_id": "reuters-11767",
+          "distance": 0.37221384048461914
+        },
+        {
+          "document_id": "reuters-18505",
+          "distance": 0.38705170154571533
+        }
+      ],
+      "answer": "Alcan Australia made a cash bid of 39.3 million New Zealand Dollars for all the issued shares of Alcan New Zealand at 1.80 New Zealand Dollars each [1].",
+      "trace_id": "tr-c16aff519e7da1cfe71038f353512439",
+      "facts": [
+        {
+          "fact": "39.3 mln N.Z. Dlr",
+          "verbatim": false,
+          "stated": true,
+          "quote": "39.3 million New Zealand Dollars",
+          "quote_found": true,
+          "reason": "The answer gives the same amount, with 'million' for 'mln' and 'New Zealand Dollars' for 'N.Z. Dlr'."
+        },
+        {
+          "fact": "1.80 N.Z. Dlrs",
+          "verbatim": false,
+          "stated": true,
+          "quote": "1.80 New Zealand Dollars each",
+          "quote_found": true,
+          "reason": "The answer gives the same per-share price in spelled-out form."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document states that Alcan Australia Ltd will make a 39.3 mln N.Z. Dlr cash bid for all the issued shares of Alcan New Zealand Ltd at 1.80 N.Z. Dlrs each, with a four-for-three share alternative. The claim says Alcan Australia made a cash bid of 39.3 million NZ dollars for all issued shares at 1.80 NZ dollars each. This matches the document. The claim's phrasing 'made' versus 'will make' is a minor tense difference and does not change the substance.",
+      "errors": {}
+    },
+    {
+      "id": "q0006",
+      "question": "What did Nicolas Mosar warn about Gulf War developments and oil markets?",
+      "style": "undated",
+      "key_facts": [
+        "increase tensions in the oil market"
+      ],
+      "expected_doc_ids": [
+        "reuters-18340"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-18340",
+          "distance": 0.33203041553497314
+        },
+        {
+          "document_id": "reuters-11149",
+          "distance": 0.45531904697418213
+        },
+        {
+          "document_id": "reuters-6722",
+          "distance": 0.4916975498199463
+        },
+        {
+          "document_id": "reuters-8131",
+          "distance": 0.5020332336425781
+        }
+      ],
+      "answer": "Nicolas Mosar warned that an escalation in the Gulf War would increase tensions in the oil market. He emphasized the importance of monitoring developments in the Gulf War and their potential consequences on oil supplies, while also noting that the volume of EC oil imports from the Gulf had declined [1].",
+      "trace_id": "tr-815eaab881c8510884694f77a869e25c",
+      "facts": [
+        {
+          "fact": "increase tensions in the oil market",
+          "verbatim": true,
+          "stated": true,
+          "quote": "an escalation in the Gulf War would increase tensions in the oil market",
+          "quote_found": true,
+          "reason": "The answer directly states that escalation would increase tensions in the oil market."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document quotes Mosar saying 'An escalation in the Gulf would increase tensions in the oil market,' which matches the first statement. He also said the EC should 'watch very carefully for any developments in the Gulf War and their consequences on the oil market,' which supports the emphasis on monitoring developments and their consequences. The claim's phrase 'potential consequences on oil supplies' is a slight paraphrase of 'consequences on the oil market,' and the document also discusses Gulf oil supplies. Finally, Mosar said the volume of EC oil imports from the Gulf had declined to about 31 pct of total imports from 35 pct, which supports the last statement. All parts of the claim are supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0007",
+      "question": "What dividend did Volkswagen set for its ordinary shares?",
+      "style": "undated",
+      "key_facts": [
+        "10 marks"
+      ],
+      "expected_doc_ids": [
+        "reuters-15547"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-15547",
+          "distance": 0.27355092763900757
+        },
+        {
+          "document_id": "reuters-15020",
+          "distance": 0.30256521701812744
+        },
+        {
+          "document_id": "reuters-15581",
+          "distance": 0.3200089931488037
+        },
+        {
+          "document_id": "reuters-15020",
+          "distance": 0.3819018602371216
+        }
+      ],
+      "answer": "Volkswagen set the dividend for its ordinary shares at 10 marks per share for the 1986 business year, unchanged from the previous year [1].",
+      "trace_id": "tr-a4ef0fd5621dd0ba0b17db8d1362ec80",
+      "facts": [
+        {
+          "fact": "10 marks",
+          "verbatim": true,
+          "stated": true,
+          "quote": "10 marks per share",
+          "quote_found": true,
+          "reason": "The answer explicitly gives the dividend as 10 marks per share."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document (reuters-15547) states that the dividend on the 1986 business year was unchanged at 10 marks per ordinary share, and that the 1985 level of 10 marks per ordinary share was held (also stated in reuters-15020). The claim says the dividend was 10 marks per share for 1986, unchanged from the previous year, which matches. The citation [1] corresponds to the first document. All parts of the claim are supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0008",
+      "question": "What OECD growth rate did the EIU forecast for 1987?",
+      "style": "dated",
+      "key_facts": [
+        "2.5 pct"
+      ],
+      "expected_doc_ids": [
+        "reuters-3019",
+        "reuters-3065"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-3065",
+          "distance": 0.2762439250946045
+        },
+        {
+          "document_id": "reuters-3019",
+          "distance": 0.3103642463684082
+        },
+        {
+          "document_id": "reuters-3019",
+          "distance": 0.3268004059791565
+        },
+        {
+          "document_id": "reuters-3065",
+          "distance": 0.3268004059791565
+        }
+      ],
+      "answer": "The EIU forecasted the OECD economic growth rate to be 2.5 percent for 1987, revised down from a 2.8 percent growth forecast in December [3].",
+      "trace_id": "tr-593bca11922879572f3282e6c8d9e82e",
+      "facts": [
+        {
+          "fact": "2.5 pct",
+          "verbatim": false,
+          "stated": true,
+          "quote": "2.5 percent for 1987",
+          "quote_found": true,
+          "reason": "The answer gives 2.5 percent as the EIU's OECD growth forecast for 1987, which matches '2.5 pct'."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document states that the EIU, in its World Trade Forecast, revised OECD economic growth downwards to 2.5 pct this year (1987), compared with a 2.8 pct growth forecast in December. The claim says the EIU forecast 2.5 percent OECD growth for 1987, revised down from 2.8 percent in December. This matches the document. The citation marker [3] is just a reference format and does not affect the content, so every part of the claim is supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0009",
+      "question": "What did West Germany oppose in the EC farm reform proposals?",
+      "style": "undated",
+      "key_facts": [
+        "oils and fats tax",
+        "cereals production curbs",
+        "Monetary Compensatory Amounts"
+      ],
+      "expected_doc_ids": [
+        "reuters-5285"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-5285",
+          "distance": 0.29788732528686523
+        },
+        {
+          "document_id": "reuters-18403",
+          "distance": 0.34278571605682373
+        },
+        {
+          "document_id": "reuters-11592",
+          "distance": 0.35076403617858887
+        },
+        {
+          "document_id": "reuters-672",
+          "distance": 0.35416853427886963
+        }
+      ],
+      "answer": "West Germany opposed the proposed tax on edible oils and fats, as well as proposed cereals production curbs. Additionally, they were against the abolition of an agri-monetary mechanism that acts as a subsidy for West German farm exports [1][2].",
+      "trace_id": "tr-dbdbcab310eedf4a656257d5aa4529d6",
+      "facts": [
+        {
+          "fact": "oils and fats tax",
+          "verbatim": false,
+          "stated": true,
+          "quote": "West Germany opposed the proposed tax on edible oils and fats",
+          "quote_found": true,
+          "reason": "The answer says West Germany opposed the tax on edible oils and fats."
+        },
+        {
+          "fact": "cereals production curbs",
+          "verbatim": true,
+          "stated": true,
+          "quote": "proposed cereals production curbs",
+          "quote_found": true,
+          "reason": "The answer names cereals production curbs as something West Germany opposed."
+        },
+        {
+          "fact": "Monetary Compensatory Amounts",
+          "verbatim": false,
+          "stated": true,
+          "quote": "the abolition of an agri-monetary mechanism that acts as a subsidy for West German farm exports",
+          "quote_found": true,
+          "reason": "The answer describes MCAs by function (agri-monetary mechanism subsidizing farm exports) without naming them, which is a paraphrase."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document says West Germany was 'also opposed to the oils and fats tax' and that Kohl 'reiterated German objections to proposed cereals production curbs.' This supports the claim about the edible oils and fats tax and the cereals production curbs. The second document says 'Bonn has also opposed the abolition of an agri-monetary mechanism that acts as a subsidy for West German farm exports,' which supports the third part of the claim. All parts of the claim are supported by the document.",
+      "errors": {}
+    },
+    {
+      "id": "q0010",
+      "question": "What dividend and stock split did K mart announce on March 24?",
+      "style": "dated",
+      "key_facts": [
+        "17.6 pct",
+        "three-for-two"
+      ],
+      "expected_doc_ids": [
+        "reuters-8846"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-03-24",
+        "date_to": "1987-03-25"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-8846",
+          "distance": 0.2161363959312439
+        },
+        {
+          "document_id": "reuters-9416",
+          "distance": 0.49329042434692383
+        },
+        {
+          "document_id": "reuters-9284",
+          "distance": 0.4943816661834717
+        },
+        {
+          "document_id": "reuters-9599",
+          "distance": 0.49903059005737305
+        }
+      ],
+      "answer": "K Mart announced a 17.6% increase in the quarterly dividend, raising it to 43.5 cents per presplit share, up from the previous 37 cents per share. The company also declared a three-for-two stock split, which means that after the split, the new quarterly dividend rate is equivalent to 29 cents a share [1].",
+      "trace_id": "tr-c6429891632fc874f933747f34e8131e",
+      "facts": [
+        {
+          "fact": "17.6 pct",
+          "verbatim": false,
+          "stated": true,
+          "quote": "K Mart announced a 17.6% increase in the quarterly dividend",
+          "quote_found": true,
+          "reason": "The answer gives the 17.6% dividend increase, the same as 17.6 pct."
+        },
+        {
+          "fact": "three-for-two",
+          "verbatim": true,
+          "stated": true,
+          "quote": "The company also declared a three-for-two stock split",
+          "quote_found": true,
+          "reason": "The answer states the three-for-two stock split directly."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document, dated 1987-03-24, says K mart's board approved a 17.6 pct increase in the quarterly dividend and declared a three-for-two stock split. It says the dividend was raised to 43.5 cts a presplit share from 37 cts a share, and that after the split the new quarterly dividend rate is equivalent to 29 cts a share. Every part of the claim matches this: the 17.6% increase, 43.5 cents per presplit share, the previous 37 cents, the three-for-two split, and the post-split equivalent of 29 cents. The claim's \"K Mart\" and the document's \"K mart\" refer to the same company. The claim is fully supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0011",
+      "question": "What were MONY Real Estate Investors' third-quarter earnings on March 17?",
+      "style": "dated",
+      "key_facts": [
+        "951,000",
+        "nine cts"
+      ],
+      "expected_doc_ids": [
+        "reuters-6213"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-03-17",
+        "date_to": "1987-03-18"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-6213",
+          "distance": 0.26795023679733276
+        },
+        {
+          "document_id": "reuters-6534",
+          "distance": 0.4647352695465088
+        },
+        {
+          "document_id": "reuters-6298",
+          "distance": 0.4745138883590698
+        },
+        {
+          "document_id": "reuters-6005",
+          "distance": 0.4780235290527344
+        }
+      ],
+      "answer": "MONY Real Estate Investors reported an operating share of nine cents, an operating net of $951,000, and total income of $5,010,000 for the third quarter ending February 28, as reported on March 17, 1987 [1].",
+      "trace_id": "tr-66e433251ce5ac530d409003d8fcb1e6",
+      "facts": [
+        {
+          "fact": "951,000",
+          "verbatim": true,
+          "stated": true,
+          "quote": "an operating net of $951,000",
+          "quote_found": true,
+          "reason": "The answer gives the operating net as $951,000."
+        },
+        {
+          "fact": "nine cts",
+          "verbatim": false,
+          "stated": true,
+          "quote": "an operating share of nine cents",
+          "quote_found": true,
+          "reason": "'nine cents' is the same as 'nine cts' for the operating share."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document is the MONY Real Estate Investors report for the 3rd quarter ending Feb 28, dated 1987-03-17. It lists Oper shr nine cts, Oper net 951,000, and Total income 5,010,000, which match the claim's figures of nine cents, $951,000, and $5,010,000. The date March 17, 1987 and the quarter ending February 28 are also supported. Every part of the claim is supported by the document.",
+      "errors": {}
+    },
+    {
+      "id": "q0012",
+      "question": "What caused the Herald of Free Enterprise to capsize near Zeebrugge?",
+      "style": "undated",
+      "key_facts": [
+        "bow doors"
+      ],
+      "expected_doc_ids": [
+        "reuters-17318"
+      ],
+      "rank": null,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-2819",
+          "distance": 0.29060572385787964
+        },
+        {
+          "document_id": "reuters-2853",
+          "distance": 0.35148489475250244
+        },
+        {
+          "document_id": "reuters-2968",
+          "distance": 0.3565084934234619
+        },
+        {
+          "document_id": "reuters-3440",
+          "distance": 0.3733479976654053
+        }
+      ],
+      "answer": "The Herald of Free Enterprise capsized possibly due to water flooding the car decks through the bow doors, or it might have been holed, according to initial reports. A British government investigation was initiated to determine the exact cause of the incident [3].",
+      "trace_id": "tr-1f90d395033f58cf05b7bdddc215b6e3",
+      "facts": [
+        {
+          "fact": "bow doors",
+          "verbatim": true,
+          "stated": true,
+          "quote": "water flooding the car decks through the bow doors",
+          "quote_found": true,
+          "reason": "The answer names the bow doors as the route of flooding, though hedged with 'possibly'."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The third document (reuters-2968) says a British government investigation got under way, and a preliminary investigation had started into why the ferry capsized. It reports that initial reports spoke of water flooding the car decks through the bow doors, and the owners' spokesman said the ferry might also have been holed. The claim restates these points and says the exact cause was still to be determined, which matches the minister's remark that it was too early to say what happened. The citation [3] corresponds to the third document. The claim is hedged ('possibly', 'might', 'initial reports') and does not assert a definitive cause, so it is fully supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0013",
+      "question": "What were United Biscuits' pretax profit and turnover in the 53 weeks to January 3, 1987?",
+      "style": "dated",
+      "key_facts": [
+        "125.2 mln",
+        "1.93 billion"
+      ],
+      "expected_doc_ids": [
+        "reuters-6349"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-6349",
+          "distance": 0.2774322032928467
+        },
+        {
+          "document_id": "reuters-8155",
+          "distance": 0.4274919033050537
+        },
+        {
+          "document_id": "reuters-4081",
+          "distance": 0.4281691908836365
+        },
+        {
+          "document_id": "reuters-18495",
+          "distance": 0.4284093379974365
+        }
+      ],
+      "answer": "United Biscuits' pretax profit in the 53 weeks to January 3, 1987, was 125.2 million stg, and their turnover was 1.93 billion stg [1].",
+      "trace_id": "tr-1b744e8b474e9711db97823192ca98aa",
+      "facts": [
+        {
+          "fact": "125.2 mln",
+          "verbatim": false,
+          "stated": true,
+          "quote": "pretax profit in the 53 weeks to January 3, 1987, was 125.2 million stg",
+          "quote_found": true,
+          "reason": "The answer gives pretax profit as 125.2 million stg, matching 125.2 mln."
+        },
+        {
+          "fact": "1.93 billion",
+          "verbatim": true,
+          "stated": true,
+          "quote": "their turnover was 1.93 billion stg",
+          "quote_found": true,
+          "reason": "The answer states turnover as 1.93 billion stg, which matches."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document reports United Biscuits' results for the 53 weeks to January 3, 1987, with pretax profit of 125.2 mln and turnover of 1.93 billion stg. The claim states pretax profit of 125.2 million stg and turnover of 1.93 billion stg, which matches. The currency (stg) is supported by the turnover line, and the pretax profit figure is in the same report. All parts of the claim are supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0014",
+      "question": "What pact did California Micro Devices and Grumman's Tachonics sign in March?",
+      "style": "dated",
+      "key_facts": [
+        "gallium arsenide"
+      ],
+      "expected_doc_ids": [
+        "reuters-10151"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-03-01",
+        "date_to": "1987-03-31"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-10151",
+          "distance": 0.22386044263839722
+        },
+        {
+          "document_id": "reuters-10236",
+          "distance": 0.43729472160339355
+        },
+        {
+          "document_id": "reuters-10938",
+          "distance": 0.47184741497039795
+        },
+        {
+          "document_id": "reuters-6029",
+          "distance": 0.479103684425354
+        }
+      ],
+      "answer": "California Micro Devices Corp signed an agreement with Grumman Corp's Tachonics Corp unit to develop and produce gallium arsenide semiconductor chips. Under this pact, California Micro Devices will design the chips, and Tachonics will manufacture them. The initial products to be developed will be gate arrays with 500 to 2,500 gate complexity and radiation hardening capabilities [1].",
+      "trace_id": "tr-81d9999c8d9c8ef276d6b410919f77a5",
+      "facts": [
+        {
+          "fact": "gallium arsenide",
+          "verbatim": true,
+          "stated": true,
+          "quote": "develop and produce gallium arsenide semiconductor chips",
+          "quote_found": true,
+          "reason": "The answer explicitly says the pact covers gallium arsenide semiconductor chips."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document, dated 1987-03-26, says California Micro Devices Corp signed an agreement with Grumman Corp's Tachonics Corp unit to develop and produce (typo 'product') gallium arsenide semiconductor chips. It says California Micro Devices will design the chips and Tachonics will manufacture them. It also says the initial products will be gate arrays with 500 to 2,500 gate complexity and radiation hardening capabilities. The signing date falls in March, matching the question. Every part of the claim is supported by the document.",
+      "errors": {}
+    },
+    {
+      "id": "q0015",
+      "question": "Why is Cehave NV Veghel challenging the European Community grain co-responsibility levy?",
+      "style": "undated",
+      "key_facts": [
+        "currency cross-rates"
+      ],
+      "expected_doc_ids": [
+        "reuters-16146"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-16146",
+          "distance": 0.2653127908706665
+        },
+        {
+          "document_id": "reuters-9907",
+          "distance": 0.35961151123046875
+        },
+        {
+          "document_id": "reuters-16146",
+          "distance": 0.3632875680923462
+        },
+        {
+          "document_id": "reuters-16146",
+          "distance": 0.40301084518432617
+        }
+      ],
+      "answer": "Cehave NV Veghel is challenging the European Community grain co-responsibility levy because the way the levy is applied does not take into account currency cross-rates of exchange. This can result in a situation where a compounder in one country is required to pay a higher levy in its own national currency than it received down the chain from the original producer of the grain. The complaint is that this creates distortions, especially for compounders in countries with stronger currencies, who may end up paying more [1], [2].",
+      "trace_id": "tr-4d3b5f0d810c54afc0ad028be90131f9",
+      "facts": [
+        {
+          "fact": "currency cross-rates",
+          "verbatim": true,
+          "stated": true,
+          "quote": "the way the levy is applied does not take into account currency cross-rates of exchange",
+          "quote_found": true,
+          "reason": "The answer explicitly says the levy ignores currency cross-rates of exchange."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document says Cehave NV Veghel began legal proceedings against the levy, backed by Het Comite. Het Comite claims the levy's application ignores currency cross-rates of exchange and can mean a compounder in one country must pay a higher levy in its national currency than it received down the chain from the original grain producer. The second document says the basic complaint is that compounders in strong-currency countries may have to pay more in their own currency than producers in another country pay them. The claim's reasons match these points. Cehave is the test case, and the complaint is Het Comite's, which Cehave carries forward as the test case, so the attribution is reasonable. The word 'distortions' appears in the document as 'alleged distortions caused by currency factors'. All parts of the claim are supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0016",
+      "question": "What price per share will Charter Federal pay for Jefferson Savings and Loan in March?",
+      "style": "dated",
+      "key_facts": [
+        "30.50 dlrs"
+      ],
+      "expected_doc_ids": [
+        "reuters-8373"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-03-01",
+        "date_to": "1987-03-31"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-8373",
+          "distance": 0.2776453495025635
+        },
+        {
+          "document_id": "reuters-11680",
+          "distance": 0.4461252689361572
+        },
+        {
+          "document_id": "reuters-11680",
+          "distance": 0.4514336585998535
+        },
+        {
+          "document_id": "reuters-9240",
+          "distance": 0.4579756259918213
+        }
+      ],
+      "answer": "Charter Federal will pay $30.50 per share for Jefferson Savings and Loan, with half in cash and half in shares of Charter [1].",
+      "trace_id": "tr-44b85cf4be3253c716f5847ad90a70eb",
+      "facts": [
+        {
+          "fact": "30.50 dlrs",
+          "verbatim": false,
+          "stated": true,
+          "quote": "Charter Federal will pay $30.50 per share",
+          "quote_found": true,
+          "reason": "The answer gives $30.50 per share, which is the same as 30.50 dlrs."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document, dated 1987-03-23, says Charter Federal Savings and Loan Association agreed to acquire Jefferson Savings and Loan Association. It states that Jefferson stockholders will get 30.50 dlrs per share, half in cash and half in shares of Charter. The claim's $30.50 per share, half cash and half Charter shares, matches this. The claim's citation [1] is consistent with the first document. The question mentions March, and the announcement is dated March 1987, so this is also consistent. The document does not say when payment will occur, but the claim does not assert a payment date either.",
+      "errors": {}
+    },
+    {
+      "id": "q0017",
+      "question": "What is Bank of British Columbia's revised shareholder distribution estimate after selling its assets?",
+      "style": "undated",
+      "key_facts": [
+        "65 cts and 1.15 dlrs"
+      ],
+      "expected_doc_ids": [
+        "reuters-4019"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-4019",
+          "distance": 0.19995921850204468
+        },
+        {
+          "document_id": "reuters-4012",
+          "distance": 0.34780967235565186
+        },
+        {
+          "document_id": "reuters-4019",
+          "distance": 0.3541109561920166
+        },
+        {
+          "document_id": "reuters-1456",
+          "distance": 0.38672226667404175
+        }
+      ],
+      "answer": "Bank of British Columbia's revised estimate of shareholder distributions after selling its assets is between 65 cents and 1.15 dollars per share. It may rise to between 1.30 dollars and 1.80 dollars per share if the full pension surplus is obtained [1].",
+      "trace_id": "tr-cd59632b75712d4b0237242267ed9a7b",
+      "facts": [
+        {
+          "fact": "65 cts and 1.15 dlrs",
+          "verbatim": false,
+          "stated": true,
+          "quote": "between 65 cents and 1.15 dollars per share",
+          "quote_found": true,
+          "reason": "The answer gives the same range, 65 cents to 1.15 dollars per share, in different wording."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document (reuters-4019) states that Bank of British Columbia revised its estimate of shareholder distributions from the November sale of most of its assets to between 65 cts and 1.15 dlrs a share, from 55 cts to 1.20 dlrs. It also says the estimate could rise to between 1.30 dlrs and 1.80 dlrs a share if the full pension surplus is obtained. Both parts of the claim match the document.",
+      "errors": {}
+    },
+    {
+      "id": "q0018",
+      "question": "Why did TecSyn terminate takeover talks on June 29?",
+      "style": "dated",
+      "key_facts": [
+        "access to funds"
+      ],
+      "expected_doc_ids": [
+        "reuters-19912"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-06-29",
+        "date_to": "1987-06-30"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-19912",
+          "distance": 0.1862344741821289
+        },
+        {
+          "document_id": "reuters-19766",
+          "distance": 0.5503506660461426
+        },
+        {
+          "document_id": "reuters-19926",
+          "distance": 0.5546996593475342
+        },
+        {
+          "document_id": "reuters-19760",
+          "distance": 0.5595750212669373
+        }
+      ],
+      "answer": "TecSyn terminated takeover talks because the U.S.-based investors group was unable to establish access to funds to complete the proposed transactions, which was contrary to previous assurances they had given. [1]",
+      "trace_id": "tr-3e3cf13df63fc99424029bb75954de1c",
+      "facts": [
+        {
+          "fact": "access to funds",
+          "verbatim": true,
+          "stated": true,
+          "quote": "unable to establish access to funds to complete the proposed transactions",
+          "quote_found": true,
+          "reason": "The answer explicitly says the investors could not establish access to funds."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document, dated 1987-06-29, says TecSyn International terminated takeover discussions with a U.S.-based investors group because the group was unable to establish access to funds to complete the proposed transactions, contrary to previous assurances. The claim restates this reason and the document supports every part of it. The other documents are unrelated to TecSyn.",
+      "errors": {}
+    },
+    {
+      "id": "q0019",
+      "question": "What was the maximum export rebate at the EC sugar tender on April 8?",
+      "style": "dated",
+      "key_facts": [
+        "46.496 Ecus"
+      ],
+      "expected_doc_ids": [
+        "reuters-15394"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-04-08",
+        "date_to": "1987-04-09"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-15394",
+          "distance": 0.24652862548828125
+        },
+        {
+          "document_id": "reuters-15017",
+          "distance": 0.2560274600982666
+        },
+        {
+          "document_id": "reuters-14923",
+          "distance": 0.28240203857421875
+        },
+        {
+          "document_id": "reuters-14885",
+          "distance": 0.3023403286933899
+        }
+      ],
+      "answer": "The maximum export rebate at the EC sugar tender on April 8 was 46.496 European Currency Units (ECUs) per 100 kilos [2].",
+      "trace_id": "tr-6ccb1d6eefbf96183954710b1f4e4c75",
+      "facts": [
+        {
+          "fact": "46.496 Ecus",
+          "verbatim": false,
+          "stated": true,
+          "quote": "46.496 European Currency Units (ECUs) per 100 kilos",
+          "quote_found": true,
+          "reason": "The answer gives the same value of 46.496 ECUs, which is the same unit as Ecus."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document 'EC COMMISSION DETAILS SUGAR TENDER' dated 1987-04-08 says export licences were granted at a maximum export rebate of 46.496 European Currency Units (ECUs) per 100 kilos. The 1987-04-09 article also confirms the maximum rebate of 46.496 Ecus per 100 kilos at 'yesterday's' tender, which is April 8. The claim matches this. The citation marker [2] is just a reference format and corresponds to the second document, which contains this figure. The claim is supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0020",
+      "question": "Who sold Pakistan 100,000 tonnes of white sugar at tender?",
+      "style": "undated",
+      "key_facts": [
+        "North Korean"
+      ],
+      "expected_doc_ids": [
+        "reuters-16327"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-16327",
+          "distance": 0.19166797399520874
+        },
+        {
+          "document_id": "reuters-11166",
+          "distance": 0.23256266117095947
+        },
+        {
+          "document_id": "reuters-15415",
+          "distance": 0.32044166326522827
+        },
+        {
+          "document_id": "reuters-343",
+          "distance": 0.3773890733718872
+        }
+      ],
+      "answer": "Pakistan bought 100,000 tonnes of white sugar at tender from a North Korean operator [1].",
+      "trace_id": "tr-45cef3d89f6931f64a83a09067b6a8bc",
+      "facts": [
+        {
+          "fact": "North Korean",
+          "verbatim": true,
+          "stated": true,
+          "quote": "from a North Korean operator",
+          "quote_found": true,
+          "reason": "The answer says the sugar was bought from a North Korean operator, which matches the fact."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document says Pakistan is reported to have bought 100,000 tonnes of white sugar at its weekend tender from a North Korean operator, according to traders. The claim says Pakistan bought 100,000 tonnes of white sugar at tender from a North Korean operator, which matches. The document hedges with 'reportedly' and 'is reported to have', but the claim is consistent with that report and answers the question of who sold the sugar. The claim is supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0021",
+      "question": "What did Japan commit to in the April G-7 statement about opening its markets?",
+      "style": "dated",
+      "key_facts": [
+        "foreign goods and services"
+      ],
+      "expected_doc_ids": [
+        "reuters-15375",
+        "reuters-15452"
+      ],
+      "rank": null,
+      "applied_filters": {
+        "date_from": "1987-04-01",
+        "date_to": "1987-04-30"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-15408",
+          "distance": 0.31839609146118164
+        },
+        {
+          "document_id": "reuters-15456",
+          "distance": 0.31839609146118164
+        },
+        {
+          "document_id": "reuters-16153",
+          "distance": 0.37858355045318604
+        },
+        {
+          "document_id": "reuters-16184",
+          "distance": 0.37864720821380615
+        }
+      ],
+      "answer": "Japan reaffirmed its intention to further open its domestic markets as part of the proposals welcomed by the G-7 in the April statement [1].",
+      "trace_id": "tr-c3702a289a49f43b32af1264b0b79358",
+      "facts": [
+        {
+          "fact": "foreign goods and services",
+          "verbatim": false,
+          "stated": false,
+          "quote": "",
+          "quote_found": false,
+          "reason": "The answer mentions opening domestic markets but never says they are opened to foreign goods and services."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": false,
+      "grounded": "yes",
+      "groundedness_rationale": "The document, a 1987-04-09 article, says the G-7 stated that they welcomed proposals announced by Japan's ruling LDP for extraordinary and urgent measures to stimulate its economy and that Japan reaffirmed its intention to further open its domestic markets. The claim says Japan reaffirmed its intention to further open its domestic markets as part of the proposals welcomed by the G-7 in the April statement. The document supports the reaffirmation of the intention to open markets. The claim's phrasing 'as part of the proposals welcomed' is slightly loose, since the document lists the market opening as a separate item from the welcomed proposals. This is a minor framing issue, and the core content is supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0022",
+      "question": "On March 5, how high did Taiwan's foreign exchange reserves rise?",
+      "style": "dated",
+      "key_facts": [
+        "51 billion"
+      ],
+      "expected_doc_ids": [
+        "reuters-1940"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-03-05",
+        "date_to": "1987-03-06"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-1940",
+          "distance": 0.23976129293441772
+        },
+        {
+          "document_id": "reuters-1940",
+          "distance": 0.514397382736206
+        },
+        {
+          "document_id": "reuters-2025",
+          "distance": 0.5293691158294678
+        },
+        {
+          "document_id": "reuters-2858",
+          "distance": 0.53183513879776
+        }
+      ],
+      "answer": "The context does not provide the exact value of Taiwan's foreign exchange reserves on March 5. It only states that the reserves hit a new high of more than 51 billion U.S. dollars on March 4. Therefore, I cannot give a specific figure for March 5.",
+      "trace_id": "tr-c047564a97b86718c87e4ffcb6ace355",
+      "facts": [
+        {
+          "fact": "51 billion",
+          "verbatim": true,
+          "stated": true,
+          "quote": "the reserves hit a new high of more than 51 billion U.S. dollars on March 4",
+          "quote_found": true,
+          "reason": "The answer mentions reserves of more than 51 billion U.S. dollars, though it attributes this to March 4 and declines to give a March 5 figure."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The claim says the context gives no exact value for Taiwan's reserves on March 5 and only states they hit a new high of more than 51 billion U.S. dollars on March 4. The document, dated 1987-03-05, says the reserves 'hit a new high of more than 51 billion U.S. Dlrs on March 4', compared with 50 billion in mid-February. It gives no separate figure for March 5, so the claim accurately describes what the document contains. The claim that no specific March 5 figure is provided is consistent with the document.",
+      "errors": {}
+    },
+    {
+      "id": "q0023",
+      "question": "Did Pratt Hotel Corp's tender offer for Resorts International meet the 51 percent condition?",
+      "style": "undated",
+      "key_facts": [
+        "45,690"
+      ],
+      "expected_doc_ids": [
+        "reuters-5121"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-5121",
+          "distance": 0.26568448543548584
+        },
+        {
+          "document_id": "reuters-9047",
+          "distance": 0.4199092984199524
+        },
+        {
+          "document_id": "reuters-11888",
+          "distance": 0.43770796060562134
+        },
+        {
+          "document_id": "reuters-9047",
+          "distance": 0.4379615783691406
+        }
+      ],
+      "answer": "No, Pratt Hotel Corp's tender offer for Resorts International did not meet the 51 percent condition. As of the expiration of the offer, only about 45,690 shares were tendered, which was insufficient to satisfy the condition that 51 percent of the voting power be tendered [1].",
+      "trace_id": "tr-19fe47a7024fe7c366ce08b3c3065754",
+      "facts": [
+        {
+          "fact": "45,690",
+          "verbatim": true,
+          "stated": true,
+          "quote": "only about 45,690 shares were tendered",
+          "quote_found": true,
+          "reason": "The answer explicitly gives the figure 45,690 as the number of shares tendered."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document says PH Acquisition Co, a unit of Pratt Hotel Corp, saw its tender offer for Resorts International Class B stock expire, with about 45,690 shares tendered. It calls that an insufficient number to satisfy the condition that 51 pct of the voting power be tendered. This supports the claim that the offer did not meet the 51 percent condition and that about 45,690 shares were tendered. The claim's wording 'as of the expiration of the offer' matches 'As of today' in the document, since the offer had just expired. Every part of the claim is supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0024",
+      "question": "What U.S. joint venture did Nippon Mining sign with Conoco Inc?",
+      "style": "undated",
+      "key_facts": [
+        "135 mln dlr"
+      ],
+      "expected_doc_ids": [
+        "reuters-17419"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-17419",
+          "distance": 0.22466444969177246
+        },
+        {
+          "document_id": "reuters-11403",
+          "distance": 0.31867456436157227
+        },
+        {
+          "document_id": "reuters-17419",
+          "distance": 0.3985779285430908
+        },
+        {
+          "document_id": "reuters-3469",
+          "distance": 0.414872407913208
+        }
+      ],
+      "answer": "Nippon Mining signed an agreement with Conoco Inc to participate in a $135 million exploration venture that includes six wells on land and 14 offshore in Louisiana. The first joint well drilled is in the Gulf of Mexico's Green Canyon Block 182, which was at risk of being returned to the federal government due to low oil prices [1].",
+      "trace_id": "tr-b9fb285f8b38ef226320b7c35fc423f6",
+      "facts": [
+        {
+          "fact": "135 mln dlr",
+          "verbatim": false,
+          "stated": true,
+          "quote": "$135 million exploration venture",
+          "quote_found": true,
+          "reason": "The answer gives the $135 million value, which matches 135 mln dlr."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document says Nippon Mining signed an agreement last September with Conoco Inc to participate in a 135 mln dlr exploration venture that includes six wells on land and 14 offshore Louisiana. It also says the first joint well drilled is in the Gulf of Mexico's Green Canyon Block 182, a deepwater lease that Conoco was almost forced to return to the federal government undrilled because of low oil prices. The claim's wording 'at risk of being returned to the federal government due to low oil prices' matches this. Every part of the claim is supported by the document.",
+      "errors": {}
+    },
+    {
+      "id": "q0025",
+      "question": "What would Allis-Chalmers keep under its restructuring plan?",
+      "style": "undated",
+      "key_facts": [
+        "American Air Filter"
+      ],
+      "expected_doc_ids": [
+        "reuters-1860"
+      ],
+      "rank": 2,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-19849",
+          "distance": 0.23214471340179443
+        },
+        {
+          "document_id": "reuters-1860",
+          "distance": 0.2471630573272705
+        },
+        {
+          "document_id": "reuters-1860",
+          "distance": 0.28066396713256836
+        },
+        {
+          "document_id": "reuters-1860",
+          "distance": 0.28657257556915283
+        }
+      ],
+      "answer": "Under its restructuring plan, Allis-Chalmers indicated that it would keep the American Air Filter business while selling all other businesses [4].",
+      "trace_id": "tr-efbcf78b818ce574c4e9f5434a13bced",
+      "facts": [
+        {
+          "fact": "American Air Filter",
+          "verbatim": true,
+          "stated": true,
+          "quote": "it would keep the American Air Filter business",
+          "quote_found": true,
+          "reason": "The answer explicitly says Allis-Chalmers would keep the American Air Filter business."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document (reuters-1860, the fourth passage) says: \"The company said it would sell all of its businesses other than the American Air Filter business.\" This matches the claim that Allis-Chalmers would keep the American Air Filter business and sell all other businesses. The citation marker [4] corresponds to the fourth passage, which contains this statement. The claim is fully supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0026",
+      "question": "What did Dauphin Deposit Corp agree to acquire on April 13?",
+      "style": "dated",
+      "key_facts": [
+        "Colonial Bancorp"
+      ],
+      "expected_doc_ids": [
+        "reuters-16648"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-04-13",
+        "date_to": "1987-04-14"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-16648",
+          "distance": 0.26794224977493286
+        },
+        {
+          "document_id": "reuters-16420",
+          "distance": 0.48360300064086914
+        },
+        {
+          "document_id": "reuters-16130",
+          "distance": 0.4860786199569702
+        },
+        {
+          "document_id": "reuters-16215",
+          "distance": 0.4860883951187134
+        }
+      ],
+      "answer": "Dauphin Deposit Corp agreed to acquire Colonial Bancorp Inc. on April 13, 1987 [1].",
+      "trace_id": "tr-73ea501196ebc1dfa60edbf2a00cc66f",
+      "facts": [
+        {
+          "fact": "Colonial Bancorp",
+          "verbatim": true,
+          "stated": true,
+          "quote": "Dauphin Deposit Corp agreed to acquire Colonial Bancorp Inc.",
+          "quote_found": true,
+          "reason": "The answer names Colonial Bancorp Inc. as the acquisition target."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document, dated 1987-04-13, says Dauphin Deposit Corp signed a definitive agreement to acquire Colonial Bancorp Inc. The claim says Dauphin Deposit Corp agreed to acquire Colonial Bancorp Inc. on April 13, 1987, which matches the document's date and content. The claim is supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0027",
+      "question": "What credit guarantees will Saudi Arabia accept from Petrobras?",
+      "style": "undated",
+      "key_facts": [
+        "Banco do Brasil"
+      ],
+      "expected_doc_ids": [
+        "reuters-5123",
+        "reuters-5125",
+        "reuters-5281"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-5125",
+          "distance": 0.309471070766449
+        },
+        {
+          "document_id": "reuters-5123",
+          "distance": 0.34295761585235596
+        },
+        {
+          "document_id": "reuters-5281",
+          "distance": 0.34840691089630127
+        },
+        {
+          "document_id": "reuters-4689",
+          "distance": 0.36650335788726807
+        }
+      ],
+      "answer": "Saudi Arabia will accept Banco do Brasil's credit guarantees from Petrobras [1], [2], [3].",
+      "trace_id": "tr-3de1ae4d0c26ca1978a3ae064d92a221",
+      "facts": [
+        {
+          "fact": "Banco do Brasil",
+          "verbatim": true,
+          "stated": true,
+          "quote": "Saudi Arabia will accept Banco do Brasil's credit guarantees from Petrobras",
+          "quote_found": true,
+          "reason": "The answer explicitly names Banco do Brasil as the source of the guarantees."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The claim says Saudi Arabia will accept Banco do Brasil's credit guarantees from Petrobras. The first document says Saudi Arabia lifted its condition and \"will accept Banco do Brasil's credit guarantees, state-oil company Petrobras said in a statement.\" The second and third documents say \"Petrobras said the Saudis will accept Banco do Brasil credit guarantees.\" The claim's wording \"from Petrobras\" is slightly loose, since the guarantees are Brazil's and Petrobras only announced the decision. Even so, the core claim that Saudi Arabia will accept Banco do Brasil's credit guarantees is directly supported by the documents.",
+      "errors": {}
+    },
+    {
+      "id": "q0028",
+      "question": "What did Malcolm Baldrige predict about the U.S.-Japan semiconductor trade dispute?",
+      "style": "undated",
+      "key_facts": [
+        "soon settle",
+        "trade war"
+      ],
+      "expected_doc_ids": [
+        "reuters-10665",
+        "reuters-10781"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-10665",
+          "distance": 0.2571239471435547
+        },
+        {
+          "document_id": "reuters-10781",
+          "distance": 0.25754857063293457
+        },
+        {
+          "document_id": "reuters-13273",
+          "distance": 0.2710312604904175
+        },
+        {
+          "document_id": "reuters-5690",
+          "distance": 0.277757465839386
+        }
+      ],
+      "answer": "Malcolm Baldrige predicted that the United States and Japan would soon settle their trade dispute over semiconductors. He noted that Japan's government wanted to adhere to the trade agreement but its industries had not been complying. Baldrige expressed confidence that there would be a good settlement to spare both sides, and he indicated that he did not believe a trade war would occur [1][2].",
+      "trace_id": "tr-bf5b110d219f456dfcc6f5bea46b02df",
+      "facts": [
+        {
+          "fact": "soon settle",
+          "verbatim": true,
+          "stated": true,
+          "quote": "Malcolm Baldrige predicted that the United States and Japan would soon settle their trade dispute over semiconductors.",
+          "quote_found": true,
+          "reason": "The answer says the two countries would soon settle the dispute."
+        },
+        {
+          "fact": "trade war",
+          "verbatim": true,
+          "stated": true,
+          "quote": "he did not believe a trade war would occur",
+          "quote_found": true,
+          "reason": "The answer says Baldrige did not expect a trade war."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document (reuters-10665 and reuters-10781) says Baldrige stated the US and Japan will soon settle their semiconductor trade dispute. It quotes him saying Japan's government wants to live up to the agreement but its industries haven't been doing it, and that he thinks there will be a good settlement to spare both sides. He also said he does not think there will be a trade war at all. Every part of the claim matches the document, so the claim is fully supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0029",
+      "question": "What were Fine Art Acquisitions Ltd's fourth-quarter sales and net income?",
+      "style": "dated",
+      "key_facts": [
+        "5,849,695",
+        "141,224"
+      ],
+      "expected_doc_ids": [
+        "reuters-12898"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-12898",
+          "distance": 0.330837607383728
+        },
+        {
+          "document_id": "reuters-3801",
+          "distance": 0.38583993911743164
+        },
+        {
+          "document_id": "reuters-9973",
+          "distance": 0.4265633821487427
+        },
+        {
+          "document_id": "reuters-169",
+          "distance": 0.4306860566139221
+        }
+      ],
+      "answer": "Fine Art Acquisitions Ltd's fourth-quarter sales were $5,849,695, and the net income was $141,224 [1].",
+      "trace_id": "tr-ef811d64e21855f571c5e2978de6201a",
+      "facts": [
+        {
+          "fact": "5,849,695",
+          "verbatim": true,
+          "stated": true,
+          "quote": "fourth-quarter sales were $5,849,695",
+          "quote_found": true,
+          "reason": "The answer gives this exact figure as fourth-quarter sales."
+        },
+        {
+          "fact": "141,224",
+          "verbatim": true,
+          "stated": true,
+          "quote": "the net income was $141,224",
+          "quote_found": true,
+          "reason": "The answer gives this exact figure as net income."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document reports Fine Art Acquisitions Ltd's 4th quarter results as Net 141,224 (vs 118,192) and Sales 5,849,695 (vs 3,717,794). The claim states fourth-quarter sales of $5,849,695 and net income of $141,224, which matches the document exactly. The document does not specify currency, but the Reuters-style figures are in dollars by context, and the claim's figures are otherwise fully supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0030",
+      "question": "In June, was the U.S. considering lifting tariffs on Japanese semiconductor trade?",
+      "style": "dated",
+      "key_facts": [
+        "not yet decided"
+      ],
+      "expected_doc_ids": [
+        "reuters-18104"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-06-01",
+        "date_to": "1987-06-30"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-18104",
+          "distance": 0.2403017282485962
+        },
+        {
+          "document_id": "reuters-18148",
+          "distance": 0.34889358282089233
+        },
+        {
+          "document_id": "reuters-17912",
+          "distance": 0.38371706008911133
+        },
+        {
+          "document_id": "reuters-18519",
+          "distance": 0.4299335479736328
+        }
+      ],
+      "answer": "Yes, in June, the U.S. was weighing the possibility of lifting tariffs on Japanese semiconductor trade, but a decision had not yet been made [1].",
+      "trace_id": "tr-ceba3f4b3a18531dc095be6edc685bb5",
+      "facts": [
+        {
+          "fact": "not yet decided",
+          "verbatim": false,
+          "stated": true,
+          "quote": "a decision had not yet been made",
+          "quote_found": true,
+          "reason": "The answer says outright that no decision had been made yet, which is the same as 'not yet decided'."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document, dated 1987-06-02, says the White House completed a review of Japanese semiconductor trading practices but had not yet decided whether the trade sanctions (100 pct tariffs) imposed in April should be lifted. This matches the claim that in June the U.S. was weighing lifting tariffs and that no decision had been made. The claim's description of the sanctions as 'tariffs on Japanese semiconductor trade' is a slight simplification, since the tariffs were on Japanese electronic goods imposed over semiconductor trade practices, but the document links them directly to the semiconductor pact. The claim is supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0031",
+      "question": "What tin export quotas did the ATPC set for Malaysia and Indonesia on March 2?",
+      "style": "dated",
+      "key_facts": [
+        "28,526",
+        "24,516"
+      ],
+      "expected_doc_ids": [
+        "reuters-311"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-03-02",
+        "date_to": "1987-03-03"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-311",
+          "distance": 0.2144073247909546
+        },
+        {
+          "document_id": "reuters-311",
+          "distance": 0.3062983751296997
+        },
+        {
+          "document_id": "reuters-311",
+          "distance": 0.33896273374557495
+        },
+        {
+          "document_id": "reuters-908",
+          "distance": 0.34043800830841064
+        }
+      ],
+      "answer": "The ATPC set the tin export quotas as follows: Malaysia was allocated an export quota of 28,526 tonnes, and Indonesia was allocated 24,516 tonnes [1].",
+      "trace_id": "tr-aa3306739de38edbd1a069098b68e874",
+      "facts": [
+        {
+          "fact": "28,526",
+          "verbatim": true,
+          "stated": true,
+          "quote": "Malaysia was allocated an export quota of 28,526 tonnes",
+          "quote_found": true,
+          "reason": "The answer gives 28,526 tonnes as Malaysia's quota."
+        },
+        {
+          "fact": "24,516",
+          "verbatim": true,
+          "stated": true,
+          "quote": "Indonesia was allocated 24,516 tonnes",
+          "quote_found": true,
+          "reason": "The answer gives 24,516 tonnes as Indonesia's quota."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document, dated 1987-03-02, says: \"Under the ATPC plan, Malaysia has been allocated an export quota of 28,526 tonnes, Indonesia 24,516.\" This matches the claim's figures for Malaysia (28,526 tonnes) and Indonesia (24,516 tonnes). A later passage repeats the Indonesian quota of 24,516 tonnes. The claim says the ATPC set the quotas, and the document describes them as allocated under the ATPC plan, so that is consistent. The claim is supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0032",
+      "question": "What did Fidelcor Business Credit Corp agree to buy from Lazere Financial in April?",
+      "style": "dated",
+      "key_facts": [
+        "loan portfolio"
+      ],
+      "expected_doc_ids": [
+        "reuters-12350"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-04-01",
+        "date_to": "1987-04-30"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-12350",
+          "distance": 0.2217700481414795
+        },
+        {
+          "document_id": "reuters-15061",
+          "distance": 0.43040305376052856
+        },
+        {
+          "document_id": "reuters-16512",
+          "distance": 0.5073497891426086
+        },
+        {
+          "document_id": "reuters-16459",
+          "distance": 0.5150781869888306
+        }
+      ],
+      "answer": "Fidelcor Business Credit Corp agreed to acquire a substantial portion of Lazere Financial Corp's assets, which includes most of Lazere's loan portfolio and other assets, including its Miami office. Additionally, Fidelcor plans to hire the majority of Lazere's 100 employees [1].",
+      "trace_id": "tr-ab93134c25a10dfef4a6d0aed428af47",
+      "facts": [
+        {
+          "fact": "loan portfolio",
+          "verbatim": true,
+          "stated": true,
+          "quote": "most of Lazere's loan portfolio",
+          "quote_found": true,
+          "reason": "The answer says Fidelcor agreed to acquire most of Lazere's loan portfolio."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document, dated 1987-04-01, says Fidelcor Business Credit Corp reached a definitive agreement to acquire a substantial portion of Lazere Financial Corp's assets. It also says Fidelcor would acquire most of Lazere's loan portfolio and other assets, including its Miami office, and plans to hire the majority of Lazere's 100 employees. Each part of the claim matches this. The date falls in April, so the 'in April' framing is consistent. The claim leaves out the Bank of New England Corp ownership and the Federal Reserve approval condition, but omitting these does not contradict the claim. The claim is supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0033",
+      "question": "How much beef did Argentina export in Jan/Feb 1987?",
+      "style": "dated",
+      "key_facts": [
+        "26,945"
+      ],
+      "expected_doc_ids": [
+        "reuters-4022"
+      ],
+      "rank": null,
+      "applied_filters": {
+        "date_from": "1987-01-01",
+        "date_to": "1987-02-28"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-6",
+          "distance": 0.3877764940261841
+        },
+        {
+          "document_id": "reuters-105",
+          "distance": 0.518310010433197
+        },
+        {
+          "document_id": "reuters-181",
+          "distance": 0.5376682281494141
+        },
+        {
+          "document_id": "reuters-1",
+          "distance": 0.5479285717010498
+        }
+      ],
+      "answer": "The provided context does not contain information about Argentine beef exports for January or February 1987.",
+      "trace_id": "tr-4a97526751e53bda45557e3a0cb6beac",
+      "facts": [
+        {
+          "fact": "26,945",
+          "verbatim": false,
+          "stated": false,
+          "quote": "",
+          "quote_found": false,
+          "reason": "The answer says the information is unavailable and gives no figure."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": false,
+      "grounded": "yes",
+      "groundedness_rationale": "The claim says the provided context has no information about Argentine beef exports in January or February 1987. The document has four snippets: Argentine grain/oilseed registrations, US sugar quota imports, a US Treasury bridge loan to Argentina, and Bahia cocoa sales. None of them mention beef or Argentine beef exports for January or February 1987. The claim is therefore supported by the document.",
+      "errors": {}
+    },
+    {
+      "id": "q0034",
+      "question": "What were MCI Communications Corp's third-quarter net earnings on October 19?",
+      "style": "dated",
+      "key_facts": [
+        "22 mln"
+      ],
+      "expected_doc_ids": [
+        "reuters-21324"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-10-19",
+        "date_to": "1987-10-20"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-21324",
+          "distance": 0.20340490341186523
+        },
+        {
+          "document_id": "reuters-20337",
+          "distance": 0.36099857091903687
+        },
+        {
+          "document_id": "reuters-21453",
+          "distance": 0.3676043748855591
+        },
+        {
+          "document_id": "reuters-21113",
+          "distance": 0.37759339809417725
+        }
+      ],
+      "answer": "MCI Communications Corp's third-quarter net earnings on October 19 were $22 million, compared to $18 million for the same period the previous year [1].",
+      "trace_id": "tr-ddfc93f65541ceb9ace6bf527a822c57",
+      "facts": [
+        {
+          "fact": "22 mln",
+          "verbatim": false,
+          "stated": true,
+          "quote": "were $22 million",
+          "quote_found": true,
+          "reason": "The answer gives net earnings of $22 million, equivalent to 22 mln."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document is a Reuters item dated 1987-10-19 for MCI Communications Corp's 3rd quarter net, and it reports \"Net 22 mln vs 18 mln\". The claim says third-quarter net earnings were $22 million against $18 million in the same period the previous year. That matches the document. The document gives no currency symbol, but the claim's use of dollars is a reasonable reading of the figures, and the note itself mentions \"dlrs\". The October 19 date is the report date, which the claim words as the date of the earnings. The claim is supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0035",
+      "question": "Why did Numac Oil and Gas expect results to improve in 1987?",
+      "style": "dated",
+      "key_facts": [
+        "federal and provincial governments"
+      ],
+      "expected_doc_ids": [
+        "reuters-3846"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-3846",
+          "distance": 0.20585787296295166
+        },
+        {
+          "document_id": "reuters-9952",
+          "distance": 0.376140296459198
+        },
+        {
+          "document_id": "reuters-3840",
+          "distance": 0.3777505159378052
+        },
+        {
+          "document_id": "reuters-5936",
+          "distance": 0.41477227210998535
+        }
+      ],
+      "answer": "Numac Oil and Gas Ltd expects significant improvement in operating performance during 1987 due to changes introduced by federal and provincial governments during 1986, which should help results. Additionally, the company experienced challenges in 1986 from lower prices for crude oil and pipeline capacity constraints, which they hope to overcome in the subsequent year [1].",
+      "trace_id": "tr-01b61495f51e4f79202ea0d57e1b190a",
+      "facts": [
+        {
+          "fact": "federal and provincial governments",
+          "verbatim": true,
+          "stated": true,
+          "quote": "changes introduced by federal and provincial governments during 1986",
+          "quote_found": true,
+          "reason": "The answer attributes the expected improvement to changes made by federal and provincial governments."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document says Numac expects significant improvement in operating performance during 1987 and that changes introduced by federal and provincial governments during 1986 should help results. This matches the claim's first part. The same document says 1986 earnings from continuing operations fell due to lower crude oil prices and pipeline capacity constraints, which matches the claim's second part. The claim adds that the company 'hopes to overcome' these challenges in the following year. This is a mild paraphrase and inference, since the document says only that it expects improvement. It does not contradict the document and is consistent with the stated expectation of improvement. Overall, the claim is supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0036",
+      "question": "What was the September U.S. housing starts rate?",
+      "style": "dated",
+      "key_facts": [
+        "1,669,000"
+      ],
+      "expected_doc_ids": [
+        "reuters-20116"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-20116",
+          "distance": 0.23836779594421387
+        },
+        {
+          "document_id": "reuters-20116",
+          "distance": 0.2934607267379761
+        },
+        {
+          "document_id": "reuters-5886",
+          "distance": 0.34115302562713623
+        },
+        {
+          "document_id": "reuters-18463",
+          "distance": 0.3494694232940674
+        }
+      ],
+      "answer": "The September U.S. housing starts rate was a seasonally adjusted annual rate of 1,669,000 units, reflecting a rise of 4.4% from the previous month [1].",
+      "trace_id": "tr-80027b519dc714afdc5c6502d0ed32d8",
+      "facts": [
+        {
+          "fact": "1,669,000",
+          "verbatim": true,
+          "stated": true,
+          "quote": "seasonally adjusted annual rate of 1,669,000 units",
+          "quote_found": true,
+          "reason": "The answer gives the housing starts rate as 1,669,000 units."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document says U.S. housing starts rose 4.4 pct in September to a seasonally adjusted annual rate of 1,669,000 units, as reported by the Commerce Department. The claim gives the same figure (1,669,000 units, seasonally adjusted annual rate) and the same 4.4% rise. The phrase 'from the previous month' is consistent with the document, which compares September to August (the 4.4 pct rise in September, with August at 1,598,000 units). Every part of the claim is supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0037",
+      "question": "What did Gad Yaacobi say about Israel's exports to the U.S. in June?",
+      "style": "dated",
+      "key_facts": [
+        "double",
+        "five billion dlrs"
+      ],
+      "expected_doc_ids": [
+        "reuters-19918"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-06-01",
+        "date_to": "1987-06-30"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-19918",
+          "distance": 0.23864901065826416
+        },
+        {
+          "document_id": "reuters-19918",
+          "distance": 0.27083027362823486
+        },
+        {
+          "document_id": "reuters-19918",
+          "distance": 0.3304523229598999
+        },
+        {
+          "document_id": "reuters-17454",
+          "distance": 0.4771850109100342
+        }
+      ],
+      "answer": "Gad Yaacobi stated that Israel's exports to the U.S. can and must double over the next five years to achieve the country's goal of economic independence. He expressed confidence that exports could reach five billion dollars in that timeframe if Israel learns to function effectively in the American marketplace and emphasizes product quality. In 1986, Israeli exports to the U.S. were over 2.3 billion dollars, which was about one-third of Israel's total exports [1].",
+      "trace_id": "tr-8d0f78fa1c7cc6351c59ac60a63b053f",
+      "facts": [
+        {
+          "fact": "double",
+          "verbatim": true,
+          "stated": true,
+          "quote": "Israel's exports to the U.S. can and must double over the next five years",
+          "quote_found": true,
+          "reason": "The answer says exports can and must double."
+        },
+        {
+          "fact": "five billion dlrs",
+          "verbatim": false,
+          "stated": true,
+          "quote": "exports could reach five billion dollars in that timeframe",
+          "quote_found": true,
+          "reason": "The answer gives five billion dollars, the same value as the fact."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document, dated 1987-06-29, quotes Gad Yaacobi saying Israel's exports to the U.S. can and must double over the next five years to achieve economic independence. It also quotes him saying he is convinced exports can reach five billion dlrs in five years if Israel learns to function in the American marketplace and places greater emphasis on product quality. It further states that in 1986 Israeli exports to the U.S. were over 2.3 billion dlrs, or about one-third of Israel's total exports. Every part of the claim matches the document. The 'in June' framing is consistent with the June 1987 date.",
+      "errors": {}
+    },
+    {
+      "id": "q0038",
+      "question": "How much did MCA pay for WOR-TV from GenCorp's RKO General?",
+      "style": "undated",
+      "key_facts": [
+        "387 mln dlrs"
+      ],
+      "expected_doc_ids": [
+        "reuters-13077"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-13077",
+          "distance": 0.23363614082336426
+        },
+        {
+          "document_id": "reuters-6410",
+          "distance": 0.301141619682312
+        },
+        {
+          "document_id": "reuters-9638",
+          "distance": 0.3517453670501709
+        },
+        {
+          "document_id": "reuters-6928",
+          "distance": 0.35701072216033936
+        }
+      ],
+      "answer": "MCA paid 387 million dollars for WOR-TV from GenCorp's RKO General [1][2].",
+      "trace_id": "tr-a8f2e6874a9ac7e237669457df215872",
+      "facts": [
+        {
+          "fact": "387 mln dlrs",
+          "verbatim": false,
+          "stated": true,
+          "quote": "MCA paid 387 million dollars",
+          "quote_found": true,
+          "reason": "The answer gives 387 million dollars, which is the same amount as 387 mln dlrs."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document states that GenCorp's RKO General subsidiary completed the sale of WOR-TV to MCA Inc for 387 mln dlrs. The other documents also say GenCorp agreed to sell WOR to MCA for 387 mln dlrs. The claim that MCA paid 387 million dollars for WOR-TV from GenCorp's RKO General is therefore supported. The citations [1][2] are consistent with the documents.",
+      "errors": {}
+    },
+    {
+      "id": "q0039",
+      "question": "What did the Bundesbank say about West Germany's trade surplus in 1987?",
+      "style": "dated",
+      "key_facts": [
+        "narrow sharply"
+      ],
+      "expected_doc_ids": [
+        "reuters-17243"
+      ],
+      "rank": 2,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-6593",
+          "distance": 0.23540031909942627
+        },
+        {
+          "document_id": "reuters-17243",
+          "distance": 0.24643385410308838
+        },
+        {
+          "document_id": "reuters-19617",
+          "distance": 0.2497107982635498
+        },
+        {
+          "document_id": "reuters-17243",
+          "distance": 0.2964925765991211
+        }
+      ],
+      "answer": "The Bundesbank reported that West Germany's current account and trade surpluses were expected to narrow sharply in 1987, and it noted that it would take a long time for them to return to normal levels. The Bundesbank did not specify what it considered \"normal\" levels for the surpluses [2].",
+      "trace_id": "tr-e7a09eaf26566615ad455ca887dc1de1",
+      "facts": [
+        {
+          "fact": "narrow sharply",
+          "verbatim": true,
+          "stated": true,
+          "quote": "were expected to narrow sharply in 1987",
+          "quote_found": true,
+          "reason": "The answer says the surpluses were expected to narrow sharply in 1987."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document (reuters-17243) says the Bundesbank, in its 1986 yearly report, stated that Germany's current account and trade surpluses should narrow sharply in 1987 but will take a long time to get back to normal levels. This matches the claim's first part. The document also says 'It did not specify what levels it considered normal,' which supports the second part of the claim. The claim's citation marker [2] is a formatting detail and does not affect support. All statements are supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0040",
+      "question": "What initial dividend did VMS Strategic Land Trust declare on April 1?",
+      "style": "dated",
+      "key_facts": [
+        "30 cts"
+      ],
+      "expected_doc_ids": [
+        "reuters-11933",
+        "reuters-12045"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-04-01",
+        "date_to": "1987-04-02"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-12045",
+          "distance": 0.19684720039367676
+        },
+        {
+          "document_id": "reuters-11933",
+          "distance": 0.19702976942062378
+        },
+        {
+          "document_id": "reuters-12674",
+          "distance": 0.4315069317817688
+        },
+        {
+          "document_id": "reuters-12672",
+          "distance": 0.44441157579421997
+        }
+      ],
+      "answer": "VMS Strategic Land Trust declared an initial dividend of 30 cents a share on April 1, 1987 [1][2].",
+      "trace_id": "tr-c28431bdb3fd9b108c58c977f3efd6c0",
+      "facts": [
+        {
+          "fact": "30 cts",
+          "verbatim": false,
+          "stated": true,
+          "quote": "an initial dividend of 30 cents a share",
+          "quote_found": true,
+          "reason": "The answer gives the dividend as 30 cents a share, the same as 30 cts."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document has two Reuters items dated 1987-04-01. Both say VMS Strategic Land Trust declared an initial dividend of 30 cts a share, payable May 15 to shareholders of record April 20. The claim states an initial dividend of 30 cents a share declared on April 1, 1987, and the document supports this, including the date and the amount. The citations [1][2] correspond to these two documents. All parts of the claim are supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0041",
+      "question": "What were Dow Chemical's third-quarter net earnings on October 20?",
+      "style": "dated",
+      "key_facts": [
+        "330,000,000"
+      ],
+      "expected_doc_ids": [
+        "reuters-20138"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-10-20",
+        "date_to": "1987-10-21"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-20138",
+          "distance": 0.21227216720581055
+        },
+        {
+          "document_id": "reuters-20157",
+          "distance": 0.314985990524292
+        },
+        {
+          "document_id": "reuters-20476",
+          "distance": 0.42397356033325195
+        },
+        {
+          "document_id": "reuters-20715",
+          "distance": 0.44794899225234985
+        }
+      ],
+      "answer": "Dow Chemical's third-quarter net earnings on October 20 were 330 million dollars, or 1.72 dollars per share, compared to 167 million dollars, or 87 cents per share a year earlier [1].",
+      "trace_id": "tr-d6798e5e230da5bb9885787a50834303",
+      "facts": [
+        {
+          "fact": "330,000,000",
+          "verbatim": false,
+          "stated": true,
+          "quote": "were 330 million dollars",
+          "quote_found": true,
+          "reason": "The answer gives net earnings of 330 million dollars, which equals 330,000,000."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document gives Dow Chemical's third-quarter 1987 results, dated 1987-10-20, as net of 330,000,000 vs 167,000,000 and EPS of 1.72 dlrs vs 87 cts. The second document, also dated 1987-10-20, states that Dow reported third-quarter earnings of 330 mln dlrs, or 1.72 dlrs a share, compared to 167 mln dlrs, or 87 cts a share a year earlier. This matches every figure in the claim: 330 million dollars, 1.72 dollars per share, 167 million dollars, and 87 cents per share. The claim is fully supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0042",
+      "question": "What did Jacques Chirac say about U.S. support for the Paris currency pact on April 1?",
+      "style": "dated",
+      "key_facts": [
+        "Baker",
+        "determined to support"
+      ],
+      "expected_doc_ids": [
+        "reuters-12145"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-04-01",
+        "date_to": "1987-04-02"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-12145",
+          "distance": 0.22011232376098633
+        },
+        {
+          "document_id": "reuters-12650",
+          "distance": 0.4136888384819031
+        },
+        {
+          "document_id": "reuters-12653",
+          "distance": 0.4136888384819031
+        },
+        {
+          "document_id": "reuters-12145",
+          "distance": 0.4299362301826477
+        }
+      ],
+      "answer": "Jacques Chirac stated that he was \"very reassured by the determination of Mr. Baker to support this agreement\" concerning the February 22 Paris agreement on stabilizing foreign exchange parities. He noted that the United States and France had \"very close\" views on financial issues and emphasized that \"Everyone is resolved to support the Paris accord\" [1].",
+      "trace_id": "tr-913931564eef68cb9b7dd0f64526e6f6",
+      "facts": [
+        {
+          "fact": "Baker",
+          "verbatim": true,
+          "stated": true,
+          "quote": "very reassured by the determination of Mr. Baker to support this agreement",
+          "quote_found": true,
+          "reason": "The answer names Mr. Baker as the U.S. figure whose support Chirac referred to."
+        },
+        {
+          "fact": "determined to support",
+          "verbatim": false,
+          "stated": true,
+          "quote": "very reassured by the determination of Mr. Baker to support this agreement",
+          "quote_found": true,
+          "reason": "Chirac's reference to Baker's determination to support the agreement paraphrases 'determined to support'."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The document, dated 1987-04-01, reports Chirac saying that the US and France had \"very close\" views on financial issues and that Baker was determined to support the February 22 Paris agreement on stabilizing foreign exchange parities. It quotes him: \"I was very reassured by the determination of Mr. Baker to support this agreement.\" It also quotes him: \"Everyone is resolved to support the Paris accord.\" Every element of the claim matches the document. The claim's citation marker [1] is not an issue.",
+      "errors": {}
+    },
+    {
+      "id": "q0043",
+      "question": "How much U.S. cotton will Taiwan buy on June 16?",
+      "style": "dated",
+      "key_facts": [
+        "410,000 bales"
+      ],
+      "expected_doc_ids": [
+        "reuters-18436"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-06-16",
+        "date_to": "1987-06-17"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-18436",
+          "distance": 0.28597384691238403
+        },
+        {
+          "document_id": "reuters-18429",
+          "distance": 0.49864786863327026
+        },
+        {
+          "document_id": "reuters-18461",
+          "distance": 0.521699070930481
+        },
+        {
+          "document_id": "reuters-18461",
+          "distance": 0.5993732810020447
+        }
+      ],
+      "answer": "Taiwan plans to buy 410,000 bales of U.S. cotton when it visits several U.S. states early next month, as reported on June 16, 1987 [1].",
+      "trace_id": "tr-f288309f06818faaef6dc558083e51b4",
+      "facts": [
+        {
+          "fact": "410,000 bales",
+          "verbatim": true,
+          "stated": true,
+          "quote": "Taiwan plans to buy 410,000 bales of U.S. cotton",
+          "quote_found": true,
+          "reason": "The answer explicitly gives the quantity of 410,000 bales."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document, dated 1987-06-16, says a Taiwan mission plans to buy 410,000 bales of U.S. cotton when it visits several U.S. states early next month. That matches the claim's quantity, the plan, the visit timing, and the June 16, 1987 date. The claim is therefore fully supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0044",
+      "question": "Why does Murray Ohio Manufacturing expect higher first quarter earnings?",
+      "style": "dated",
+      "key_facts": [
+        "lawn and garden shipments"
+      ],
+      "expected_doc_ids": [
+        "reuters-6732",
+        "reuters-6762"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-6762",
+          "distance": 0.19550621509552002
+        },
+        {
+          "document_id": "reuters-6732",
+          "distance": 0.20881563425064087
+        },
+        {
+          "document_id": "reuters-12",
+          "distance": 0.4095492362976074
+        },
+        {
+          "document_id": "reuters-14993",
+          "distance": 0.4719163775444031
+        }
+      ],
+      "answer": "Murray Ohio Manufacturing expects higher first quarter earnings due to increased lawn and garden shipments in January and February, as well as a record-setting pace in March. Additionally, they noted that recent orders and shipments for bicycles have improved significantly, despite soft sales early in the period [1][2].",
+      "trace_id": "tr-db319db7d284b68cea78e6f343720b95",
+      "facts": [
+        {
+          "fact": "lawn and garden shipments",
+          "verbatim": true,
+          "stated": true,
+          "quote": "due to increased lawn and garden shipments in January and February",
+          "quote_found": true,
+          "reason": "The answer explicitly cites increased lawn and garden shipments as a reason for higher earnings."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document says Murray Ohio expects higher first quarter earnings due to increased lawn and garden shipments in January and February and a record-setting pace in March, which matches the first part of the claim. The second document says bicycle sales were soft early in the period, but recent orders and shipments have been running well ahead of last year, which supports the claim that bicycle orders and shipments have improved significantly despite early softness. The claim's wording is a reasonable paraphrase, so all statements are supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0045",
+      "question": "What coffee quota proposal will ICO producers present on February 26?",
+      "style": "dated",
+      "key_facts": [
+        "12 months from April 1"
+      ],
+      "expected_doc_ids": [
+        "reuters-42"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-02-26",
+        "date_to": "1987-02-27"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-42",
+          "distance": 0.21895301342010498
+        },
+        {
+          "document_id": "reuters-75",
+          "distance": 0.2680029273033142
+        },
+        {
+          "document_id": "reuters-1",
+          "distance": 0.6108823418617249
+        },
+        {
+          "document_id": "reuters-105",
+          "distance": 0.6549592614173889
+        }
+      ],
+      "answer": "ICO producers will present a proposal for reintroducing export quotas for 12 months starting from April 1. The proposal includes a firm undertaking to negotiate future quota distribution until September 30, and the distribution from April 1 will be based on an unchanged basis as in an earlier proposal, which includes shortfall redistributions totaling 1.22 million bags [1].",
+      "trace_id": "tr-edd155bacc2fc9f8dbeb110b11458525",
+      "facts": [
+        {
+          "fact": "12 months from April 1",
+          "verbatim": false,
+          "stated": true,
+          "quote": "reintroducing export quotas for 12 months starting from April 1",
+          "quote_found": true,
+          "reason": "The answer states the quota period is 12 months starting April 1."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document (reuters-42) states that ICO producing countries will present a proposal for reintroducing export quotas for 12 months from April 1, with a firm undertaking to try to negotiate up to September 30 any future quota distribution on a new basis. It also says distribution from April 1 would be on an unchanged basis as in an earlier producer proposal, which includes shortfall redistributions totalling 1.22 mln bags. The claim restates all of this accurately. The claim says 'negotiate future quota distribution until September 30', which matches 'try to negotiate up to September 30'. The second document says the proposal will be modified before presentation, but that does not contradict the claim, which reflects the first document's content. The claim is supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0046",
+      "question": "What spirits business is Corby Distilleries buying in Canada on October 20?",
+      "style": "dated",
+      "key_facts": [
+        "McGuinness Distillers"
+      ],
+      "expected_doc_ids": [
+        "reuters-20037"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-10-20",
+        "date_to": "1987-10-21"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-20037",
+          "distance": 0.2596108913421631
+        },
+        {
+          "document_id": "reuters-20312",
+          "distance": 0.5609891414642334
+        },
+        {
+          "document_id": "reuters-20251",
+          "distance": 0.5898334980010986
+        },
+        {
+          "document_id": "reuters-20224",
+          "distance": 0.6030058264732361
+        }
+      ],
+      "answer": "Corby Distilleries is buying the spirits business of McGuinness Distillers Ltd of Toronto for 45 million Canadian dollars on October 20, 1987 [1].",
+      "trace_id": "tr-a0dde339ffd25491915242729c8fefee",
+      "facts": [
+        {
+          "fact": "McGuinness Distillers",
+          "verbatim": true,
+          "stated": true,
+          "quote": "the spirits business of McGuinness Distillers Ltd of Toronto",
+          "quote_found": true,
+          "reason": "The answer names McGuinness Distillers Ltd as the business being bought."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document, dated 1987-10-20, says Corby Distilleries Ltd, 52 pct owned by Allied Lyons subsidiary Hiram Walker-Goodman & Worts, is to buy the spirits business of McGuinness Distillers Ltd of Toronto for 45 mln Canadian dlrs. The claim matches this: the target (McGuinness Distillers Ltd of Toronto), the price (45 million Canadian dollars) and the date (October 20, 1987). The document says the sale is subject to approval of the Bureau of Competition Policy, but the claim does not say the deal is final, so there is no conflict. The claim is supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0047",
+      "question": "Why did GTE Corp's net income decline because of U.S. Sprint?",
+      "style": "undated",
+      "key_facts": [
+        "121 mln dlr"
+      ],
+      "expected_doc_ids": [
+        "reuters-16481"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-16481",
+          "distance": 0.16570520401000977
+        },
+        {
+          "document_id": "reuters-20292",
+          "distance": 0.22888904809951782
+        },
+        {
+          "document_id": "reuters-16496",
+          "distance": 0.2593226432800293
+        },
+        {
+          "document_id": "reuters-20241",
+          "distance": 0.30713701248168945
+        }
+      ],
+      "answer": "GTE Corp's net income declined due to a loss of 121 million dollars from its 50 percent share ownership of U.S. Sprint's operations. This loss increased from a 60 million dollar loss reported in the same quarter a year earlier. The higher losses were attributed to lower prices and higher operating costs, which were partly related to fraudulent use of the network [1].",
+      "trace_id": "tr-a0f8896f63c2b9b84f70e7ba0c134fa7",
+      "facts": [
+        {
+          "fact": "121 mln dlr",
+          "verbatim": false,
+          "stated": true,
+          "quote": "a loss of 121 million dollars from its 50 percent share ownership of U.S. Sprint's operations",
+          "quote_found": true,
+          "reason": "The answer gives the 121 million dollar loss, which matches 121 mln dlr."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document (reuters-16481) says GTE's first quarter net income decline reflects a 121 mln dlr loss from its 50 pct share ownership of U.S. Sprint's operations, which matches the claim. It says this loss is an increase from the 60 mln dlr loss reported on operations GTE owned in the year-ago quarter, which matches as well. It also says the higher losses reflect lower prices and higher operating costs related, in part, to fraudulent use of the network, which matches the claim. Every statement in the claim is supported by the document.",
+      "errors": {}
+    },
+    {
+      "id": "q0048",
+      "question": "How much cargo passed through Abidjan port, and how did exports and imports change?",
+      "style": "undated",
+      "key_facts": [
+        "9.47 mln tonnes",
+        "3.75 mln",
+        "5.72 mln"
+      ],
+      "expected_doc_ids": [
+        "reuters-10394"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-10394",
+          "distance": 0.20318663120269775
+        },
+        {
+          "document_id": "reuters-1889",
+          "distance": 0.48160386085510254
+        },
+        {
+          "document_id": "reuters-19570",
+          "distance": 0.48473918437957764
+        },
+        {
+          "document_id": "reuters-8437",
+          "distance": 0.5028104186058044
+        }
+      ],
+      "answer": "In the last year, 9.47 million tonnes of goods passed through the port of Abidjan, an increase from 9.26 million tonnes the previous year. Exports fell to 3.75 million tonnes from 3.89 million tonnes, while imports rose to 5.72 million tonnes from 5.37 million tonnes [1].",
+      "trace_id": "tr-92fc76ca39785e593ab116e1ffcf0cfa",
+      "facts": [
+        {
+          "fact": "9.47 mln tonnes",
+          "verbatim": false,
+          "stated": true,
+          "quote": "9.47 million tonnes of goods passed through the port of Abidjan",
+          "quote_found": true,
+          "reason": "The answer gives 9.47 million tonnes as the total cargo."
+        },
+        {
+          "fact": "3.75 mln",
+          "verbatim": false,
+          "stated": true,
+          "quote": "Exports fell to 3.75 million tonnes",
+          "quote_found": true,
+          "reason": "The answer gives exports as 3.75 million tonnes."
+        },
+        {
+          "fact": "5.72 mln",
+          "verbatim": false,
+          "stated": true,
+          "quote": "imports rose to 5.72 million tonnes",
+          "quote_found": true,
+          "reason": "The answer gives imports as 5.72 million tonnes."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document says 9.47 mln tonnes of goods passed through Abidjan port last year compared with 9.26 mln the year before. It also says exports fell to 3.75 mln from 3.89 mln tonnes and imports rose to 5.72 mln from 5.37 mln. Every figure and direction of change in the claim matches the document. The claim's phrase 'in the last year' corresponds to the document's 'last year' (1986, per the 1987 report). The claim is fully supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0049",
+      "question": "How much in EC financial packages did ministers approve for Mediterranean states on March 31?",
+      "style": "dated",
+      "key_facts": [
+        "1.6 billion"
+      ],
+      "expected_doc_ids": [
+        "reuters-11315"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-03-31",
+        "date_to": "1987-04-01"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-11315",
+          "distance": 0.23061257600784302
+        },
+        {
+          "document_id": "reuters-11592",
+          "distance": 0.5148056745529175
+        },
+        {
+          "document_id": "reuters-11541",
+          "distance": 0.5505138039588928
+        },
+        {
+          "document_id": "reuters-11862",
+          "distance": 0.5527368783950806
+        }
+      ],
+      "answer": "EC ministers approved financial packages totalling 1.6 billion European currency units for several Mediterranean states on March 31, 1987 [1].",
+      "trace_id": "tr-decef528953e368697dd494c327ee6c2",
+      "facts": [
+        {
+          "fact": "1.6 billion",
+          "verbatim": true,
+          "stated": true,
+          "quote": "totalling 1.6 billion European currency units",
+          "quote_found": true,
+          "reason": "The answer gives the total as 1.6 billion ECU, matching the fact."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document is dated 1987-03-31 and says EC ministers approved financial packages for several Mediterranean states totalling 1.6 billion European currency units, according to an EC official. The claim's amount (1.6 billion ECU), the recipients (several Mediterranean states), and the date (March 31, 1987) all match this. The article is dated March 31, 1987, and the approval is reported as news that day, so the date is reasonably supported. All parts of the claim are supported.",
+      "errors": {}
+    },
+    {
+      "id": "q0050",
+      "question": "What did Richard Lyng say about U.S. meat and poultry inspection?",
+      "style": "undated",
+      "key_facts": [
+        "best inspection system"
+      ],
+      "expected_doc_ids": [
+        "reuters-12618"
+      ],
+      "rank": 1,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-12618",
+          "distance": 0.21369892358779907
+        },
+        {
+          "document_id": "reuters-15254",
+          "distance": 0.33737778663635254
+        },
+        {
+          "document_id": "reuters-15254",
+          "distance": 0.3434085249900818
+        },
+        {
+          "document_id": "reuters-15254",
+          "distance": 0.36536741256713867
+        }
+      ],
+      "answer": "Richard Lyng defended the U.S. meat and poultry inspection system, stating that the United States has \"the best inspection system in the world.\" He acknowledged the efforts of USDA to minimize salmonella levels in poultry but noted that the complete elimination of harmful bacteria is \"virtually impossible\" [1].",
+      "trace_id": "tr-5810a3e8a3c3a45d2caee878310803bd",
+      "facts": [
+        {
+          "fact": "best inspection system",
+          "verbatim": true,
+          "stated": true,
+          "quote": "the United States has \"the best inspection system in the world.\"",
+          "quote_found": true,
+          "reason": "The answer directly quotes Lyng saying the U.S. has the best inspection system in the world."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document says Lyng, reacting to criticism of U.S. meat inspection, defended the program and said the United States has the best inspection system in the world. It also quotes him saying 'the finest meat and poultry inspection system in the world'. The claim puts 'the best inspection system in the world' in quotation marks, but the document uses that wording only in paraphrase. The meaning is the same, so this does not change the substance. The document also says Lyng stated that USDA makes every effort to minimize salmonella levels in poultry and that 'the total elimination of harmful bacteria is virtually impossible in this world.' The claim reflects this accurately. Every part of the claim is supported by the document.",
+      "errors": {}
+    }
+  ]
+}

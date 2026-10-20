@@ -15,7 +15,6 @@ Nothing is changed: adding a candidate is a review decision.
 import argparse
 from pathlib import Path
 
-from app.services import vector
 from evals.checks import DEFAULT_OUT, load_cases, missing_facts
 from scripts.ingest_reuters import download_archive, iter_articles
 
@@ -28,6 +27,8 @@ def candidates(case: dict, texts: dict[str, str], max_distance: float = MAX_DIST
 
     Sorted with the complete candidates (lacking nothing) first, then by distance.
     """
+    from app.services import vector  # here: the review app imports this module without the index
+
     expected = set(case["expected_doc_ids"])
     found: dict[str, dict] = {}
     for doc_id in case["expected_doc_ids"]:
