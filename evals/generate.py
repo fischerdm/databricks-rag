@@ -24,10 +24,8 @@ from pydantic import BaseModel, Field, ValidationError, ValidationInfo, field_va
 
 from app.services import vector
 from app.services.llm import _client
-from evals.checks import fact_problem, style_problem
+from evals.checks import DEFAULT_OUT, fact_problem, load_cases, style_problem
 from scripts.ingest_reuters import download_archive, iter_articles
-
-DEFAULT_OUT = Path("evals/golden.jsonl")
 
 # gpt-4o-mini (the default chat model) ignored the date rules below in testing; gpt-5.4-mini kept to them.
 DEFAULT_MODEL = "gpt-5.4-mini"
@@ -107,12 +105,6 @@ STYLE_RULES: dict[Style, str] = {
     ),
     "undated": "Do not mention any date, month, quarter, year or period such as 'the first three months'.",
 }
-
-
-def load_cases(path: Path) -> list[dict]:
-    if not path.exists():
-        return []
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
 def sample_articles(n: int, seed: int, exclude: set[str]) -> list[tuple[str, str, dict]]:
