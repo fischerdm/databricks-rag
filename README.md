@@ -1,5 +1,10 @@
 # FastAPI RAG Boilerplate
 
+[![CI](https://github.com/fischerdm/fastapi-rag-boilerplate/actions/workflows/ci.yml/badge.svg)](https://github.com/fischerdm/fastapi-rag-boilerplate/actions/workflows/ci.yml)
+[![Open the review app in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://fastapi-rag-boilerplate.streamlit.app/)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
 <p align="center">
   <img src="docs/images/front.png" alt="Chat UI start screen" width="49%">
   <img src="docs/images/example.png" alt="Example answer with filters and sources" width="49%">
@@ -91,6 +96,8 @@ A golden dataset is a fixed, reviewed set of questions with known right answers 
 **Not implemented yet:** a chunk-level retrieval check. hit@k counts an article as found when any of its chunks is retrieved, even if the chunk holding the answer is not (q0021). Checking whether each key fact appears in the retrieved chunks would catch that for free, like the normalized fact check; DeepEval's contextual recall (usable through MLflow) is the LLM-judged version of the same idea. Note that it measures retrieval, not the answer, so it complements groundedness rather than replacing it.
 
 ### Review app
+
+**Live demo (read-only): [fastapi-rag-boilerplate.streamlit.app](https://fastapi-rag-boilerplate.streamlit.app/)**
 
 <p align="center">
   <img src="docs/images/golden-1.png" alt="Review app: a golden case with its key facts checked and highlighted in the expected article" width="49%">
