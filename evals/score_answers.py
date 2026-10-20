@@ -30,8 +30,8 @@ from app.config import get_settings
 from app.schemas import SearchFilters
 from app.services import llm, retrieval, vector
 from evals import scorers
+from evals.checks import DEFAULT_OUT, load_cases
 from evals.evaluate import RUNS_DIR, doc_rank
-from evals.generate import DEFAULT_OUT, load_cases
 
 EXPERIMENT = "rag-answers"
 

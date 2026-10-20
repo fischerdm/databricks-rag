@@ -16,7 +16,8 @@ import argparse
 from pathlib import Path
 
 from app.services import vector
-from evals.checks import missing_facts
+from evals.checks import DEFAULT_OUT, load_cases, missing_facts
+from scripts.ingest_reuters import download_archive, iter_articles
 
 # Known duplicates were at most 0.115 apart, related but different stories at least 0.197.
 MAX_DISTANCE = 0.15
@@ -44,9 +45,6 @@ def candidates(case: dict, texts: dict[str, str], max_distance: float = MAX_DIST
 
 
 def main() -> None:
-    from evals.generate import DEFAULT_OUT, load_cases
-    from scripts.ingest_reuters import download_archive, iter_articles
-
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--golden", type=Path, default=DEFAULT_OUT, help="golden dataset (JSONL)")
     parser.add_argument("--max-distance", type=float, default=MAX_DISTANCE, help="largest first-chunk distance")

@@ -92,7 +92,7 @@ The golden dataset is a regression test: after every change to prompts, models o
 
 ### The steps
 
-**① Fast checks, on every push.** Free, deterministic, no API key and no index needed. They catch broken code and broken cases: `ruff`, `evals.checks`, unit tests. This part can be added to this repo now, as a GitHub Actions job.
+**① Fast checks, on every push.** Free, deterministic, no API key and no index needed. They catch broken code and broken cases: `ruff`, `evals.checks`, unit tests. This repo runs the first two in GitHub Actions ([.github/workflows/ci.yml](../.github/workflows/ci.yml)); `evals.checks` uses only the standard library, so the job installs nothing but ruff and caches the Reuters archive between runs.
 
 **② The evaluation job.** The same two scripts as now, `evals.evaluate` and `evals.score_answers`. On Databricks, three things change:
 

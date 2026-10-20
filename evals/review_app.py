@@ -26,9 +26,8 @@ sys.path.insert(0, str(ROOT))
 os.chdir(ROOT)
 
 from evals import duplicates  # noqa: E402
-from evals.checks import case_problems, content_words, missing_facts  # noqa: E402
+from evals.checks import DEFAULT_OUT as GOLDEN, case_problems, content_words, load_cases, missing_facts  # noqa: E402
 from evals.duplicates import MAX_DISTANCE  # noqa: E402
-from evals.generate import DEFAULT_OUT as GOLDEN, load_cases  # noqa: E402
 from scripts.ingest_reuters import download_archive, iter_articles  # noqa: E402
 
 RUNS_DIR = Path("evals/runs")

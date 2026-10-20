@@ -14,12 +14,20 @@ The style describes the question: 'dated' if it names a date or period, 'undated
 
 Usage, to check the whole dataset:
     python -m evals.checks [--golden evals/golden.jsonl]
+
+It needs no API key, no index and nothing beyond the standard library, so it runs in CI
+(.github/workflows/ci.yml); it downloads the Reuters archive on first run.
 """
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
+
+from scripts.ingest_reuters import download_archive, iter_articles
+
+DEFAULT_OUT = Path("evals/golden.jsonl")
 
 # Words that carry no answer on their own: function words, question words and company suffixes,
 # so that "Volkswagen AG" counts as repeating a question that names "Volkswagen".
@@ -44,6 +52,12 @@ MONTHS = (
 WEEKDAYS = r"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday"
 PERIODS = r"(?i:quarter|qtr|weeks?|months?|(?:this|last|next|fiscal) year|(?:first|second) half|today|yesterday)"
 DATE_PATTERN = re.compile(rf"\b(?:{MONTHS}|{WEEKDAYS}|19\d\d|{PERIODS})\b")
+
+
+def load_cases(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
 def normalize(text: str) -> str:
@@ -105,8 +119,6 @@ def case_problems(case: dict, texts: dict[str, str]) -> list[str]:
 
 
 def main() -> None:
-    from evals.generate import DEFAULT_OUT, load_cases  # here: generate imports this module
-    from scripts.ingest_reuters import download_archive, iter_articles
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--golden", type=Path, default=DEFAULT_OUT, help="golden dataset (JSONL)")

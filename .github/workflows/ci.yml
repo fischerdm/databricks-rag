@@ -1,0 +1,39 @@
+# Fast checks on every push and pull request: free, deterministic, no API key and no index.
+# The evaluation with LLM calls (evals.evaluate, evals.score_answers) is not run here;
+# see docs/evaluation-in-ci.md for how it would run as a separate job.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.10"
+
+      # Only ruff: evals.checks needs nothing beyond the standard library.
+      - name: Install ruff
+        run: pip install "$(grep '^ruff' requirements-dev.txt)"
+
+      - name: Lint
+        run: ruff check --output-format=github .
+
+      - name: Format
+        run: ruff format --check .
+
+      # The corpus never changes, so download it once and reuse it.
+      - name: Cache Reuters archive
+        uses: actions/cache@v6
+        with:
+          path: data/reuters21578
+          key: reuters21578
+
+      - name: Check the golden dataset
+        run: python -m evals.checks

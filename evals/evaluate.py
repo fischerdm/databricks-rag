@@ -24,7 +24,7 @@ from pathlib import Path
 from app.config import get_settings
 from app.schemas import MetadataValue, RetrievedChunk, SearchFilters
 from app.services import retrieval, vector
-from evals.generate import DEFAULT_OUT, load_cases
+from evals.checks import DEFAULT_OUT, load_cases
 
 RUNS_DIR = Path("evals/runs")
 
