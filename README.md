@@ -2,7 +2,8 @@
 
 [![CI](https://github.com/fischerdm/fastapi-rag-boilerplate/actions/workflows/ci.yml/badge.svg)](https://github.com/fischerdm/fastapi-rag-boilerplate/actions/workflows/ci.yml)
 [![Open the review app in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://fastapi-rag-boilerplate.streamlit.app/)
-![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
+![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 <p align="center">
@@ -21,8 +22,10 @@ How it works, component by component: [docs/architecture.md](docs/architecture.m
 
 ## Setup
 
+Python 3.12, the version of current Databricks Runtimes.
+
 ```bash
-python3 -m venv .venv
+python3.12 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 cp .env.example .env   # then set OPENAI_API_KEY
 .venv/bin/uvicorn app.main:app --reload
@@ -181,3 +184,7 @@ FastAPI fits this workload well, and it does help in production, though it cover
 - **Typed contracts.** Pydantic models validate every request and response (e.g. `top_k` between 1 and 20, `date_from` not after `date_to`), and the same models generate the OpenAPI docs at `/docs`.
 - **Dependency injection.** Authentication, rate limiting, and per-request clients plug in as dependencies without touching endpoint code.
 - **ASGI ecosystem.** Other ASGI apps mount into the same server, as Chainlit does at `/ui`, and standard middleware (CORS, OpenTelemetry, Prometheus) works out of the box.
+
+## License
+
+[MIT](LICENSE)
