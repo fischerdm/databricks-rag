@@ -67,7 +67,7 @@ To refresh metadata on an existing index without re-embedding (e.g. after a meta
 
 ## Evaluation: golden dataset
 
-A golden dataset is a fixed, reviewed set of questions with known right answers ([evals/golden.jsonl](evals/golden.jsonl)). Running it after every change to prompts, models, chunking or `top_k` shows whether retrieval got better or worse. The approach, the metrics and the findings so far are explained in [docs/evaluation.md](docs/evaluation.md).
+A golden dataset is a fixed, reviewed set of questions with known right answers ([evals/golden.jsonl](evals/golden.jsonl)). Running it after every change to prompts, models, chunking or `top_k` shows whether retrieval and answers got better or worse. The approach, the metrics and the findings so far are explained in [docs/evaluation.md](docs/evaluation.md).
 
 ```bash
 .venv/bin/python -m evals.generate --n 50             # draft cases from corpus articles
@@ -75,6 +75,7 @@ A golden dataset is a fixed, reviewed set of questions with known right answers 
 .venv/bin/python -m evals.checks                      # check all cases against the dataset rules
 .venv/bin/python -m evals.evaluate                    # score retrieval as /query runs it
 .venv/bin/python -m evals.evaluate --no-auto-filters  # compare: plain similarity search
+.venv/bin/python -m evals.score_answers               # score answers with MLflow (needs ANTHROPIC_API_KEY)
 ```
 
 | Metric | Meaning |
@@ -82,8 +83,10 @@ A golden dataset is a fixed, reviewed set of questions with known right answers 
 | `hit@1`, `hit@k` | Share of questions where the expected article is ranked first / retrieved at all |
 | `MRR` | Mean of 1/rank of the expected article; 0 if not retrieved |
 | `filt.out` | Share of questions where the inferred filters excluded the expected article before the search |
+| key facts: verbatim / judge | Share of answers containing every key fact: verbatim (free), or per a Claude judge that quotes its evidence |
+| grounded | Share of answers whose every claim is supported by the retrieved passages (MLflow's built-in judge) |
 
-**Findings so far:** filtering by the inferred topic hurt retrieval (hit@4 86% on average over five runs), because a wrong topic removes the right article and the fallback only runs on zero results. Using only the inferred dates gives 94%, stable across runs, so the topic is no longer applied by default (`TOPIC_MODE=off`). A topic boost instead of a filter showed no reliable gain. Details in [docs/evaluation.md](docs/evaluation.md#6-findings).
+**Findings so far:** filtering by the inferred topic hurt retrieval (hit@4 86% on average over five runs), because a wrong topic removes the right article and the fallback only runs on zero results. Using only the inferred dates gives 94%, stable across runs, so the topic is no longer applied by default (`TOPIC_MODE=off`). A topic boost instead of a filter showed no reliable gain. Answers contain every key fact in about 93% of cases (99% when the right article is retrieved) and are grounded in 99%; the remaining failures are retrieval misses. Details in [docs/evaluation.md](docs/evaluation.md#6-findings).
 
 ## Endpoints
 
@@ -143,7 +146,7 @@ This is a boilerplate: it runs well on one machine for one user. Before exposing
 - **Resilience around OpenAI.** Set timeouts and retries with backoff, and send an `error` event on the SSE stream when generation fails midway, so clients can tell a broken answer from a finished one.
 - **Deployment.** A Dockerfile, no `--reload`, several workers, and a reverse proxy configured not to buffer SSE responses. Pin dependency versions with a lock file; `requirements.txt` only sets lower bounds.
 - **Observability.** Structured logs, request metrics, and traces of each step (filter extraction, retrieval, generation) with token usage and cost. `/health` is a liveness check only; add a readiness check that reaches the vector store.
-- **Tests and evaluation.** Unit and API tests in CI. The [golden dataset](#evaluation-golden-dataset) scores retrieval; answer quality (faithfulness, correctness, refusals) is not scored yet. Run the evaluation in CI and fail on drops in its scores.
+- **Tests and evaluation.** Unit and API tests in CI. The [golden dataset](#evaluation-golden-dataset) scores retrieval and answers; refusals on unanswerable questions are not tested yet. Run the evaluation in CI and fail on drops in its scores.
 - **Security of the content itself.** Indexed documents end up in the prompt, so untrusted documents can carry prompt injections. Restrict who can index, and treat answers as untrusted output.
 
 ### Why FastAPI

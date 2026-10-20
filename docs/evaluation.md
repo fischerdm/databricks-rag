@@ -20,7 +20,7 @@ A RAG system has many settings that change answer quality: the prompts, the mode
 
 A **golden dataset** is a fixed, reviewed set of questions with known right answers. Running all of them after every change turns 'it seems fine' into numbers that can be compared between runs. It is regression testing for RAG.
 
-So far the evaluation scores **retrieval**: does the search find the article that answers the question? Retrieval comes first because the LLM can only answer from the passages it is given. If the right article is not among them, no prompt can fix the answer. Scoring the answers themselves (faithfulness, correctness, refusals) is the next step.
+The evaluation scores **retrieval** first: does the search find the article that answers the question? The LLM can only answer from the passages it is given. If the right article is not among them, no prompt can fix the answer. It then scores the **answers**: do they contain the key facts, and is every claim supported by the retrieved passages?
 
 ## 2. The golden dataset
 
@@ -43,7 +43,7 @@ So far the evaluation scores **retrieval**: does the search find the article tha
 |---|---|
 | `question` | What a user would type |
 | `expected_doc_ids` | Articles that answer the question. Retrieval is scored against these |
-| `reference_answer`, `key_facts` | A correct answer and the facts it must contain. Not used yet; for answer scoring later |
+| `reference_answer`, `key_facts` | A correct answer and the facts it must contain. Answers are scored against the key facts; the reference answer is for review |
 | `style` | Describes the question, not the article: `dated` if it mentions a date or period ('on March 24', 'in Jan/Feb 1987', 'third-quarter'), `undated` if it mentions none. Checked automatically |
 | `source_title`, `source_date` | The article the question was generated from, to make review easier |
 | `reviewed` | Whether a person has checked the case |
@@ -164,6 +164,29 @@ How to read them:
 - **MRR** combines the two into one number; second place counts as half a hit instead of a miss.
 - **filt.out** is a diagnostic, not a quality score. It says *why* a miss happened: the article was removed by a filter before the search started, so it could not be found at any rank. A high value points at filter extraction rather than at the embeddings.
 
+### Answer metrics
+
+Answers are scored by three checks, run as MLflow scorers ([evals/scorers.py](../evals/scorers.py)). The two judges are Claude (`judge_model`, default `claude-sonnet-5-5`), so the answers (`gpt-4o-mini`) are not graded by a model of their own family.
+
+| Check | Kind | Passes if | Misses |
+|---|---|---|---|
+| **verbatim** | Code, free, deterministic | Every key fact appears verbatim in the answer, as in the articles | Paraphrases: '2.5 percent' for '2.5 pct' |
+| **judge** (`fact_coverage`) | LLM judge, one verdict per fact | The judge finds every key fact in the answer, in any wording, and quotes the words that state it | Whatever the judge gets wrong; hence the quote |
+| **grounded** | MLflow's built-in `RetrievalGroundedness` judge | Every claim in the answer is supported by the retrieved passages | Wrong facts that the passages also contain |
+
+Each is reported per case ('all facts') and, for the two fact checks, per fact. The key facts measure *completeness*; groundedness measures *faithfulness*. An answer can be complete and still invent a claim, or faithful and still miss the point, so neither replaces the other.
+
+**Why two fact checks.** Where they agree, the verdict is almost certainly right. Where they disagree, one of them is wrong, and those are the cases to read:
+
+| Verbatim | Judge | Usually means |
+|---|---|---|
+| ✗ | ✓ | A paraphrase, which the judge rightly accepts; or a lenient judge |
+| ✓ | ✗ | A key fact that matches by accident (too short, too common); or a wrong judge |
+
+**Checking the checker.** The judge must quote the passage of the answer that states each fact, and the quote is searched for in the answer. A quote that is not there means the judge invented its evidence. The review UI marks the quote blue next to the yellow verbatim matches, so a person sees at a glance what the judge accepted.
+
+MLflow's built-in `Correctness` judge also accepts key facts (as `expected_facts`), but returns one verdict per answer and no quote, so it cannot show which fact is missing or be checked against the answer.
+
 ## 4. Why filters are inferred, and why that can fail
 
 Similarity search compares *meaning*. It finds 'articles about oil prices' well, but a date in the question only shifts the embedding slightly; it does not act as a constraint. The corpus has 566 crude-oil articles spread over eight months, and without filters the question 'What happened to oil prices on October 19, 1987?' retrieved articles from March and April.
@@ -206,6 +229,22 @@ The evaluation confirmed this, so the extracted topic is no longer applied by de
 Output: the metrics overall and per `style`, then every case not ranked first with its applied filters and the retrieved titles. The full results and the settings used are written to `evals/runs/` (git-ignored), so two runs can be compared.
 
 Cases whose articles are not in the index (e.g. after `ingest_reuters --limit 500`) are skipped and counted separately, not scored as misses.
+
+### Answers
+
+[evals/score_answers.py](../evals/score_answers.py) runs each question through retrieval and the same prompt and model as `/query`, records each as an MLflow **trace** (retrieval as a `RETRIEVER` span, every OpenAI call as a child span), and scores the traces with `mlflow.genai.evaluate`. It needs `ANTHROPIC_API_KEY` in `.env` for the judges. A run of 50 cases costs well under a dollar.
+
+```bash
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m evals.score_answers               # as /query runs
+.venv/bin/python -m evals.score_answers --limit 5     # a cheap trial run
+.venv/bin/python -m evals.score_answers --ids q0012   # rescore single cases after a fix
+.venv/bin/mlflow ui --backend-store-uri sqlite:///mlflow.db   # browse runs, traces and verdicts
+```
+
+Output: the answer metrics overall and split by whether an expected article was retrieved, then every disagreement between the two fact checks and every ungrounded answer with the judge's reasoning. The full results go to `evals/runs/*-answers.json` for the review UI ('Answers to check' view), and the run, its parameters and every trace with its verdicts to the local MLflow store (`mlflow.db`, git-ignored). On Databricks, only the tracking URI changes.
+
+Answers are generated before `mlflow.genai.evaluate` runs, not by its `predict_fn`: that runs each call in a new event loop, and the app's async OpenAI client is bound to one.
 
 ## 6. Findings
 
@@ -390,10 +429,46 @@ A small boost gains one case (q0025, 2 points of hit@1). A large one gains q0021
 
 It stays available (`--topic-mode boost`) to retest when either changes.
 
+### 2026-10-19: answer baseline
+
+**Setup.** All 50 reviewed cases, as `/query` runs (`topic_mode` `off`, `top_k` 4), answers by `gpt-4o-mini`, both judges `claude-sonnet-5-5`. The answer model and the judges vary between runs, so three runs.
+
+| | all facts, verbatim | all facts, judge | per fact, verbatim | per fact, judge | grounded |
+|---|---|---|---|---|---|
+| **All 50 cases**, mean of 3 runs (min–max) | 55% (54–56) | **95%** (92–96) | 57% (56–59) | 96% (94–97) | 99% (98–100) |
+| expected article retrieved (47) | 56% (55–57) | **99%** (96–100) | 58% (57–60) | 99% (97–100) | 99% (98–100) |
+| expected article not retrieved (3) | 33% | 33% | 33% | 33% | 100% |
+
+**Finding 1: the verbatim check undercounts by 40 points.** Of the 73 facts the judge accepted but the verbatim check did not (over three runs), 60 are Reuters abbreviations that the answer model writes out: '39.3 mln N.Z. Dlr' → '39.3 million New Zealand Dollars', '17.6 pct' → '17.6%', '9.47 mln tonnes' → '9.47 million tonnes'. The rest are paraphrases such as 'a decision had not yet been made' for 'not yet decided'. All 73 were read by hand against the answer and the judge's quote: all are correct, with one borderline case (q0009: the answer describes the 'Monetary Compensatory Amounts' as 'an agri-monetary mechanism that acts as a subsidy' without naming them). The opposite disagreement, verbatim ✓ but judge ✗, never occurred, and every quote was found in its answer.
+
+So the verbatim check is a lower bound, not a score. It still earns its place: it is free, it cannot drift, and wherever it agrees with the judge it confirms it.
+
+**Finding 2: given the right article, the answer step almost never fails.** With an expected article retrieved, the answers contain every key fact in 99% of cases. The few misses are answer variance: q0009 left out 'cereals production curbs' and q0030 did not say the decision was still open, each in one run of three. The persistent failures are retrieval failures:
+
+| Case | Retrieval | Answer |
+|---|---|---|
+| q0033 Argentina beef exports Jan/Feb | Date filter excludes the article (the publication-date pitfall) | 'The provided context does not contain information…' in all three runs: an honest refusal, as the prompt asks |
+| q0021 G-7 statement | Genuine ranking miss | Says Japan will open its markets, never 'to foreign goods and services' |
+| q0012 Herald of Free Enterprise | Genuine ranking miss | Passes both fact checks, but should not; see Finding 4 |
+
+This confirms the order of work: retrieval first. Improving the answer prompt has almost nothing left to gain on these questions.
+
+**Finding 3: no hallucination found, one judge error.** 149 of 150 answers were judged grounded. The one 'no' (q0043, run 2) is wrong: the judge's own reasoning says every figure in the answer matches the article, then marks it ungrounded because the question asks what Taiwan will buy 'on June 16' while the purchase is in July. That is a criticism of the question, not of the answer's grounding. In a trial run, the same judge correctly flagged an answer that turned 'windy yesterday' into 'windy conditions expected', so it does catch subtle errors. One false alarm in 150 is acceptable for a check whose 'no' is always read by a person.
+
+**Finding 4: a key fact that is too loose.** q0012 asks what caused the ferry to capsize. Its key fact 'bow doors' appears in the inquiry article (the doors were left 'wide open') and also in an early report that retrieval ranks higher ('initial reports spoke of water flooding the car decks through the bow doors… it was also possible the ferry had been holed'). The answer, built from the early report, hedges between two causes, and both checks pass it. The fact should carry what makes the answer right: the doors were open. q0043's question has a similar weakness: 'on June 16' is the publication date, not the purchase date, which is in July.
+
+**Case fixes.** q0012's key facts are now `door` and `open`: shorter than 'wide open', so a correct answer that says 'the bow doors were left open' still matches. q0043 now asks 'How much U.S. cotton did a Taiwan mission plan to buy, as reported on June 16?', which asks about the plan the article reports and gives the date filter the publication date. Rescored three times each (`--ids q0012 q0043`): q0012 now fails both fact checks in every run (no answer says the doors were open), and q0043 passes with the expected article ranked first and a grounded answer. With the fixes, q0012 counts as a miss, so 'all facts, judge' over all 50 cases is 2 points lower than in the table above: the true baseline is about 93%.
+
+**Next.**
+
+- Normalise Reuters abbreviations in the verbatim check ('mln' = 'million', 'pct' = 'percent' or '%', 'dlrs' = 'dollars', 'cts' = 'cents') and measure how much of the 40-point gap the free check closes.
+- Answer quality is bounded by retrieval: the remaining gains are q0012, q0021 and q0033, all retrieval problems.
+
 ## 7. Pitfalls
 
 - **Don't tune on the cases you report.** If you change prompts until every case passes, the scores stop telling you anything. Keep some cases aside and look at them only for the final comparison.
 - **LLM steps vary between runs.** Filter extraction can give different filters for the same question on two runs, so scores move by a few points without any change. Run the evaluation several times before concluding that a change helped.
 - **A miss can be a wrong case.** Check the retrieved titles before blaming the system: often a second article answers the question just as well and belongs in `expected_doc_ids`.
 - **Dated questions use the publication date.** Filters match the date an article was published. A user asking about 'the week ending March 19' gets a filter that excludes the article published on April 1 that reports it. The generator avoids such questions; real users won't, so add a few by hand.
+- **An LLM judge is a measuring instrument; calibrate it.** Read its verdicts where it disagrees with a cheap deterministic check before trusting its numbers, and make it show its evidence (a quote) so it can be checked. A judge from the same provider as the answer model may share its blind spots.
 - **A generated question is easier than a real one.** It was written from the article, often with the article's own words, which flatters similarity search. Add real questions from the UI over time, especially the ones that failed.
