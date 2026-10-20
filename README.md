@@ -86,7 +86,7 @@ A golden dataset is a fixed, reviewed set of questions with known right answers 
 | key facts: verbatim / judge | Share of answers containing every key fact: verbatim (free), or per a Claude judge that quotes its evidence |
 | grounded | Share of answers whose every claim is supported by the retrieved passages (MLflow's built-in judge) |
 
-**Findings so far:** filtering by the inferred topic hurt retrieval (hit@4 86% on average over five runs), because a wrong topic removes the right article and the fallback only runs on zero results. Using only the inferred dates gives 94%, stable across runs, so the topic is no longer applied by default (`TOPIC_MODE=off`). A topic boost instead of a filter showed no reliable gain. Answers contain every key fact in 95% of cases (99% when the right article is retrieved) and are grounded in 99%; the remaining failures are retrieval misses. Details in [docs/evaluation.md](docs/evaluation.md#6-findings).
+**Findings so far:** filtering by the inferred topic hurt retrieval (hit@4 86% on average over five runs), because a wrong topic removes the right article and the fallback only runs on zero results. Using only the inferred dates gives 94%, stable across runs, so the topic is no longer applied by default (`TOPIC_MODE=off`). A topic boost instead of a filter showed no reliable gain. Answers contain every key fact in about 93% of cases (99% when the right article is retrieved) and are grounded in 99%; the remaining failures are retrieval misses. Details in [docs/evaluation.md](docs/evaluation.md#6-findings).
 
 ## Endpoints
 

@@ -238,6 +238,7 @@ Cases whose articles are not in the index (e.g. after `ingest_reuters --limit 50
 .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/python -m evals.score_answers               # as /query runs
 .venv/bin/python -m evals.score_answers --limit 5     # a cheap trial run
+.venv/bin/python -m evals.score_answers --ids q0012   # rescore single cases after a fix
 .venv/bin/mlflow ui --backend-store-uri sqlite:///mlflow.db   # browse runs, traces and verdicts
 ```
 
@@ -454,11 +455,12 @@ This confirms the order of work: retrieval first. Improving the answer prompt ha
 
 **Finding 3: no hallucination found, one judge error.** 149 of 150 answers were judged grounded. The one 'no' (q0043, run 2) is wrong: the judge's own reasoning says every figure in the answer matches the article, then marks it ungrounded because the question asks what Taiwan will buy 'on June 16' while the purchase is in July. That is a criticism of the question, not of the answer's grounding. In a trial run, the same judge correctly flagged an answer that turned 'windy yesterday' into 'windy conditions expected', so it does catch subtle errors. One false alarm in 150 is acceptable for a check whose 'no' is always read by a person.
 
-**Finding 4: a key fact that is too loose.** q0012 asks what caused the ferry to capsize. Its key fact 'bow doors' appears in the inquiry article (the doors were left 'wide open') and also in an early report that retrieval ranks higher ('initial reports spoke of water flooding the car decks through the bow doors… it was also possible the ferry had been holed'). The answer, built from the early report, hedges between two causes, and both checks pass it. The fact should carry what makes the answer right ('wide open'); the case has not been changed yet. q0043's question has a similar weakness: 'on June 16' is the publication date, not the purchase date.
+**Finding 4: a key fact that is too loose.** q0012 asks what caused the ferry to capsize. Its key fact 'bow doors' appears in the inquiry article (the doors were left 'wide open') and also in an early report that retrieval ranks higher ('initial reports spoke of water flooding the car decks through the bow doors… it was also possible the ferry had been holed'). The answer, built from the early report, hedges between two causes, and both checks pass it. The fact should carry what makes the answer right: the doors were open. q0043's question has a similar weakness: 'on June 16' is the publication date, not the purchase date, which is in July.
+
+**Case fixes.** q0012's key facts are now `door` and `open`: shorter than 'wide open', so a correct answer that says 'the bow doors were left open' still matches. q0043 now asks 'How much U.S. cotton did a Taiwan mission plan to buy, as reported on June 16?', which asks about the plan the article reports and gives the date filter the publication date. Rescored three times each (`--ids q0012 q0043`): q0012 now fails both fact checks in every run (no answer says the doors were open), and q0043 passes with the expected article ranked first and a grounded answer. With the fixes, q0012 counts as a miss, so 'all facts, judge' over all 50 cases is 2 points lower than in the table above: the true baseline is about 93%.
 
 **Next.**
 
-- Fix the two cases above in the review UI.
 - Normalise Reuters abbreviations in the verbatim check ('mln' = 'million', 'pct' = 'percent' or '%', 'dlrs' = 'dollars', 'cts' = 'cents') and measure how much of the 40-point gap the free check closes.
 - Answer quality is bounded by retrieval: the remaining gains are q0012, q0021 and q0033, all retrieval problems.
 

@@ -340,8 +340,12 @@ def is_miss(cid: str) -> bool:
 
 
 def has_answer_issue(cid: str) -> bool:
-    """The latest answer run flags this case: checks disagree, a fact is missing, or not grounded."""
-    return bool(answer_runs) and cid in answer_runs[0][1] and bool(answer_issues(answer_runs[0][1][cid]))
+    """The latest answer run with this case flags it: checks disagree, a fact is missing, or not grounded.
+
+    The latest run containing the case, not the latest run: a run with --ids scores only a few cases.
+    """
+    latest = next((run[cid] for _, run in answer_runs if cid in run), None)
+    return latest is not None and bool(answer_issues(latest))
 
 
 with st.sidebar:

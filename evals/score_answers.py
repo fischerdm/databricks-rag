@@ -2,7 +2,7 @@
 
 Usage:
     python -m evals.score_answers [--golden evals/golden.jsonl] [--top-k N] [--no-auto-filters]
-                                  [--reviewed-only] [--limit N]
+                                  [--reviewed-only] [--limit N] [--ids q0001 q0002 ...]
 
 Runs every question through retrieval and answer generation as /query does, records each as an
 MLflow trace (retrieval as a RETRIEVER span), then scores the traces with mlflow.genai.evaluate
@@ -200,6 +200,7 @@ def main() -> None:
     parser.add_argument("--no-auto-filters", action="store_true", help="search without filter extraction")
     parser.add_argument("--reviewed-only", action="store_true", help="skip cases not marked as reviewed")
     parser.add_argument("--limit", type=int, help="only the first N cases, for a cheap trial run")
+    parser.add_argument("--ids", nargs="+", help="only these case ids, e.g. to rescore cases after a fix")
     args = parser.parse_args()
     auto_filters = not args.no_auto_filters
     if not settings.anthropic_api_key:
@@ -210,6 +211,10 @@ def main() -> None:
     cases = load_cases(args.golden)
     if args.reviewed_only:
         cases = [c for c in cases if c.get("reviewed")]
+    if args.ids:
+        if unknown := set(args.ids) - {c["id"] for c in cases}:
+            parser.error(f"unknown case ids: {sorted(unknown)}")
+        cases = [c for c in cases if c["id"] in args.ids]
     metadata = vector.document_metadata(sorted({d for c in cases for d in c["expected_doc_ids"]}))
     scorable = [c for c in cases if any(d in metadata for d in c["expected_doc_ids"])][: args.limit]
 
@@ -225,6 +230,7 @@ def main() -> None:
         "auto_filters": auto_filters,
         "topic_mode": settings.topic_mode,
         "reviewed_only": args.reviewed_only,
+        "ids": ",".join(args.ids) if args.ids else "all",
         "chat_model": settings.chat_model,
         "judge_model": settings.judge_model,
         "filter_model": settings.filter_model,
