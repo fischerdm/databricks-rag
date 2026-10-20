@@ -1,8 +1,10 @@
 """Answer scorers for mlflow.genai.evaluate: does an answer contain the key facts, and is it grounded?
 
-Three checks, from cheapest to most expensive:
+Four checks, from cheapest to most expensive:
 - key_facts_verbatim (code): every key fact appears verbatim in the answer, as evals.checks
   matches them in articles. Free and deterministic, but misses paraphrases ('2.5 percent' for '2.5 pct').
+- key_facts_normalized (code): the same after writing Reuters abbreviations and the answer model's
+  spellings one way on both sides (evals.checks.ABBREVIATIONS), so '17.6%' matches '17.6 pct'. Free too.
 - fact_coverage (LLM judge): a judge decides per fact whether the answer states it, in any wording,
   and quotes the words that do. The quote is checked against the answer, so a judge that claims a
   fact the answer does not contain is caught. MLflow's built-in Correctness judge also takes the
@@ -22,7 +24,7 @@ from mlflow.genai.scorers import RetrievalGroundedness, scorer
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
-from evals.checks import missing_facts, normalize
+from evals.checks import missing_facts, missing_normalized, normalize
 
 FACT_PROMPT = """You check whether an answer from a news assistant states given facts.
 
@@ -105,6 +107,17 @@ def key_facts_verbatim(outputs: str, expectations: dict) -> Feedback:
     return Feedback(
         value=not missing,
         rationale=f"Missing verbatim: {missing}" if missing else "All key facts appear verbatim.",
+        metadata={"missing": json.dumps(missing)},
+    )
+
+
+@scorer
+def key_facts_normalized(outputs: str, expectations: dict) -> Feedback:
+    facts = expectations["key_facts"]
+    missing = missing_normalized(facts, outputs or "")
+    return Feedback(
+        value=not missing,
+        rationale=f"Missing after normalising abbreviations: {missing}" if missing else "All key facts appear.",
         metadata={"missing": json.dumps(missing)},
     )
 

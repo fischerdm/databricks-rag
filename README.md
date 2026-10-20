@@ -83,10 +83,12 @@ A golden dataset is a fixed, reviewed set of questions with known right answers 
 | `hit@1`, `hit@k` | Share of questions where the expected article is ranked first / retrieved at all |
 | `MRR` | Mean of 1/rank of the expected article; 0 if not retrieved |
 | `filt.out` | Share of questions where the inferred filters excluded the expected article before the search |
-| key facts: verbatim / judge | Share of answers containing every key fact: verbatim (free), or per a Claude judge that quotes its evidence |
+| key facts: verbatim / normalized / judge | Share of answers containing every key fact: verbatim (free), verbatim after writing abbreviations one way (free), or per a Claude judge that quotes its evidence |
 | grounded | Share of answers whose every claim is supported by the retrieved passages (MLflow's built-in judge) |
 
 **Findings so far:** filtering by the inferred topic hurt retrieval (hit@4 86% on average over five runs), because a wrong topic removes the right article and the fallback only runs on zero results. Using only the inferred dates gives 94%, stable across runs, so the topic is no longer applied by default (`TOPIC_MODE=off`). A topic boost instead of a filter showed no reliable gain. Answers contain every key fact in about 93% of cases (99% when the right article is retrieved) and are grounded in 99%; the remaining failures are retrieval misses. Details in [docs/evaluation.md](docs/evaluation.md#6-findings).
+
+**Not implemented yet:** a chunk-level retrieval check. hit@k counts an article as found when any of its chunks is retrieved, even if the chunk holding the answer is not (q0021). Checking whether each key fact appears in the retrieved chunks would catch that for free, like the normalized fact check; DeepEval's contextual recall (usable through MLflow) is the LLM-judged version of the same idea. Note that it measures retrieval, not the answer, so it complements groundedness rather than replacing it.
 
 ## Endpoints
 

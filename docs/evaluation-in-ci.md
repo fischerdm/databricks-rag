@@ -29,7 +29,7 @@ Key facts are copied verbatim from the article, so `evals.checks` can verify aut
 |---|---|
 | Verbatim (string match) | ✗: 'mln' is not 'million' |
 | Judge (Claude, per fact) | ✓: reads the fact for its meaning, and quotes 'cash bid of 39.3 million New Zealand dollars' as evidence |
-| Verbatim with abbreviations normalised (planned) | Both sides translated to one spelling before matching ('mln' → 'million', 'dlrs' → 'dollars'). Matches the common cases, so fewer verdicts rest on the judge alone |
+| Normalized (abbreviations written one way) | ✓: both sides become '39.3 mln new zealand dlr' before matching. Matched 53 of the 73 facts the verbatim check missed, so fewer verdicts rest on the judge alone ([findings](evaluation.md#2026-10-20-normalising-abbreviations-closes-most-of-the-verbatim-gap)) |
 
 The key facts say *what* a correct answer must contain; the checks decide whether an answer contains it, in whatever words. Nothing about the user's answer has to change for the evaluation, and the evaluation never changes what the user sees: it measures answers offline, after they are given.
 
@@ -61,6 +61,7 @@ The golden dataset is a regression test: after every change to prompts, models o
  │   Retrieval metrics: hit@1, hit@k, MRR    (evals.evaluate)          │
  │   mlflow.genai.evaluate with the scorers  (evals.score_answers):    │
  │     · key_facts_verbatim   code check, free, deterministic          │
+ │     · key_facts_normalized the same, abbreviations written one way  │
  │     · fact_coverage        LLM judge (Claude), one verdict per      │
  │                            key fact, with a quote as evidence       │
  │     · groundedness         MLflow's built-in LLM judge (Claude):    │

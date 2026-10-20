@@ -102,6 +102,39 @@ def missing_facts(facts: list[str], article: str) -> list[str]:
     return [fact for fact in facts if normalize(fact) not in text]
 
 
+# Reuters' telex abbreviations in the key facts, and the spellings the answer model uses for them,
+# each written as the one spelling on the left. Fixed from the key facts before measuring on stored
+# answers, so it is not tuned to the misses. Numbers written as words ('nine cts' vs '9 cents') and
+# other number formats ('330,000,000' vs '330 million') are left to the judge.
+NUMBER = r"\d+(?:[.,]\d+)*"
+ABBREVIATIONS = [
+    # Symbols first, so that '$1.15' becomes '1.15 dollars' and then '1.15 dlr'.
+    (" pct", r"(?<=\d)\s?%"),
+    (r"\1\2 dlr", rf"\$\s?({NUMBER})(\s(?:million|mln|billion|bln))?"),
+    ("pct", r"\b(?:percent|per cent)\b"),
+    ("mln", r"\bmillions?\b"),
+    ("billion", r"\bbln\b"),
+    ("dlr", r"\b(?:dollars?|dlrs?)\b"),
+    ("ct", r"\b(?:cents?|cts)\b"),
+    ("lb", r"\b(?:pounds?|lbs?)\b"),
+    ("new zealand", r"\bn\.z\.(?!\w)"),
+]
+
+
+def canonical(text: str) -> str:
+    """Text lower-cased, with collapsed whitespace and every abbreviation written one way."""
+    text = normalize(text)
+    for replacement, pattern in ABBREVIATIONS:
+        text = re.sub(pattern, replacement, text)
+    return text
+
+
+def missing_normalized(facts: list[str], answer: str) -> list[str]:
+    """The key facts that do not appear in the answer, once both are written canonically."""
+    text = canonical(answer)
+    return [fact for fact in facts if canonical(fact) not in text]
+
+
 def case_problems(case: dict, texts: dict[str, str]) -> list[str]:
     """Every rule a case breaks, given the texts of its expected articles keyed by id."""
     problems = [f"unknown article {doc_id}" for doc_id in case["expected_doc_ids"] if doc_id not in texts]
