@@ -1,0 +1,14 @@
+# Streamlit settings for the review app (evals/review_app.py), read when it runs from the repo root.
+# Dark, with the colours of the Chainlit chat UI so both apps look alike.
+
+[theme]
+base = "dark"
+primaryColor = "#ea3867"
+backgroundColor = "#262626"
+secondaryBackgroundColor = "#323232"
+textColor = "#ececec"
+borderColor = "#444444"
+
+[theme.sidebar]
+backgroundColor = "#1f1f1f"
+secondaryBackgroundColor = "#323232"

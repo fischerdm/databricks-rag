@@ -1,0 +1,161 @@
+{
+  "config": {
+    "golden": "evals/golden.jsonl",
+    "n_cases": 2,
+    "top_k": 4,
+    "auto_filters": true,
+    "topic_mode": "off",
+    "reviewed_only": false,
+    "ids": "q0012,q0043",
+    "chat_model": "gpt-4o-mini",
+    "judge_model": "claude-sonnet-5-5",
+    "filter_model": "gpt-5.4-nano",
+    "embedding_model": "text-embedding-3-small",
+    "mlflow_run_id": "082e283d1790446fa7019245abcbb9b8"
+  },
+  "summary": {
+    "n": 2,
+    "retrieved": 0.5,
+    "all_facts_verbatim": 0.5,
+    "all_facts_judged": 0.5,
+    "grounded": 1.0,
+    "facts": 3,
+    "facts_verbatim": 0.6666666666666666,
+    "facts_judged": 0.6666666666666666,
+    "errors": 0
+  },
+  "by_retrieval": {
+    "expected retrieved": {
+      "n": 1,
+      "retrieved": 1.0,
+      "all_facts_verbatim": 1.0,
+      "all_facts_judged": 1.0,
+      "grounded": 1.0,
+      "facts": 1,
+      "facts_verbatim": 1.0,
+      "facts_judged": 1.0,
+      "errors": 0
+    },
+    "expected not retrieved": {
+      "n": 1,
+      "retrieved": 0.0,
+      "all_facts_verbatim": 0.0,
+      "all_facts_judged": 0.0,
+      "grounded": 1.0,
+      "facts": 2,
+      "facts_verbatim": 0.5,
+      "facts_judged": 0.5,
+      "errors": 0
+    }
+  },
+  "results": [
+    {
+      "id": "q0012",
+      "question": "What caused the Herald of Free Enterprise to capsize near Zeebrugge?",
+      "style": "undated",
+      "key_facts": [
+        "door",
+        "open"
+      ],
+      "expected_doc_ids": [
+        "reuters-17318"
+      ],
+      "rank": null,
+      "applied_filters": {},
+      "retrieved": [
+        {
+          "document_id": "reuters-2819",
+          "distance": 0.29060572385787964
+        },
+        {
+          "document_id": "reuters-2853",
+          "distance": 0.35148489475250244
+        },
+        {
+          "document_id": "reuters-2968",
+          "distance": 0.3565084934234619
+        },
+        {
+          "document_id": "reuters-3440",
+          "distance": 0.3733479976654053
+        }
+      ],
+      "answer": "The Herald of Free Enterprise capsized possibly due to water flooding the car decks through the bow doors, and there is also speculation that the ferry may have been holed. A preliminary investigation is underway to determine the exact cause of the incident [3].",
+      "trace_id": "tr-9a4fc2de48f6d00df939090fa83b9199",
+      "facts": [
+        {
+          "fact": "door",
+          "verbatim": true,
+          "stated": true,
+          "quote": "water flooding the car decks through the bow doors",
+          "quote_found": true,
+          "reason": "The answer mentions bow doors as the route of flooding."
+        },
+        {
+          "fact": "open",
+          "verbatim": false,
+          "stated": false,
+          "quote": "",
+          "quote_found": false,
+          "reason": "The answer never says the doors were open; it only says water came through the bow doors."
+        }
+      ],
+      "all_verbatim": false,
+      "all_stated": false,
+      "grounded": "yes",
+      "groundedness_rationale": "The claim says the capsizing was possibly due to water flooding the car decks through the bow doors, with speculation the ferry may have been holed, and that a preliminary investigation is underway. The third document (reuters-2968) says 'Initial reports spoke of water flooding the car decks through the bow doors. But a spokesman for the owners, Townsend Thoresen, said it was also possible the ferry had been holed.' It also says Lord Brabazon stated a preliminary investigation had started into why the ferry capsized. All parts of the claim are supported by the document. The claim's citation [3] matches the third document as well.",
+      "errors": {}
+    },
+    {
+      "id": "q0043",
+      "question": "How much U.S. cotton did a Taiwan mission plan to buy, as reported on June 16?",
+      "style": "dated",
+      "key_facts": [
+        "410,000 bales"
+      ],
+      "expected_doc_ids": [
+        "reuters-18436"
+      ],
+      "rank": 1,
+      "applied_filters": {
+        "date_from": "1987-06-16",
+        "date_to": "1987-06-17"
+      },
+      "retrieved": [
+        {
+          "document_id": "reuters-18436",
+          "distance": 0.1940637230873108
+        },
+        {
+          "document_id": "reuters-18429",
+          "distance": 0.5086278915405273
+        },
+        {
+          "document_id": "reuters-18461",
+          "distance": 0.5675879120826721
+        },
+        {
+          "document_id": "reuters-18431",
+          "distance": 0.6085830926895142
+        }
+      ],
+      "answer": "A Taiwan mission planned to buy 410,000 bales of U.S. cotton, worth about 110 million U.S. dollars, as reported on June 16 [1].",
+      "trace_id": "tr-0630a3b1a57fea444b6b063933529e4d",
+      "facts": [
+        {
+          "fact": "410,000 bales",
+          "verbatim": true,
+          "stated": true,
+          "quote": "410,000 bales of U.S. cotton",
+          "quote_found": true,
+          "reason": "The answer explicitly gives the planned purchase as 410,000 bales."
+        }
+      ],
+      "all_verbatim": true,
+      "all_stated": true,
+      "grounded": "yes",
+      "groundedness_rationale": "The first document, dated 1987-06-16, says a Taiwan mission plans to buy 410,000 bales of U.S. cotton worth about 110 mln U.S. dollars. That matches the claim's quantity, value, and June 16 date. The claim cites this as [1], which corresponds to that document. Every part of the claim is supported.",
+      "errors": {}
+    }
+  ]
+}
