@@ -6,7 +6,7 @@ Usage:
 
 Runs every question through retrieval and answer generation as /query does, records each as an
 MLflow trace (retrieval as a RETRIEVER span), then scores the traces with mlflow.genai.evaluate
-and the scorers in evals/scorers.py. Prints a summary and every disagreement between the verbatim
+and the scorers in evals/scorers.py. Prints a summary and every disagreement between the normalized
 check and the judge, and writes the full results to evals/runs/ for the review app.
 
 The answers are generated here rather than by evaluate's predict_fn: it runs each call in a new
@@ -88,15 +88,18 @@ def collect(result_df, answered: list[dict]) -> list[dict]:
     for case in answered:
         row = by_trace[case["trace_id"]]
         verbatim = assessment(row, "key_facts_verbatim")
+        normalized = assessment(row, "key_facts_normalized")
         coverage = assessment(row, "fact_coverage")
         grounded = assessment(row, "groundedness")
         missing = set(json.loads(verbatim["metadata"].get("missing", "[]")))
+        missing_normalized = set(json.loads(normalized["metadata"].get("missing", "[]")))
         verdicts = json.loads(coverage["metadata"].get("verdicts", "[]"))
         judged = {v["fact"]: v for v in verdicts}
         facts = [
             {
                 "fact": fact,
                 "verbatim": fact not in missing,
+                "normalized": fact not in missing_normalized,
                 "stated": judged[fact]["stated"] if fact in judged else None,
                 "quote": judged[fact]["quote"] if fact in judged else "",
                 "quote_found": judged[fact]["quote_found"] if fact in judged else False,
@@ -109,6 +112,7 @@ def collect(result_df, answered: list[dict]) -> list[dict]:
                 **case,
                 "facts": facts,
                 "all_verbatim": verbatim["value"],
+                "all_normalized": normalized["value"],
                 "all_stated": coverage["value"] if not coverage["error"] else None,
                 "grounded": grounded["value"] if not grounded["error"] else None,
                 "groundedness_rationale": grounded["rationale"],
@@ -133,10 +137,12 @@ def summarize(results: list[dict]) -> dict:
         "n": len(results),
         "retrieved": share([r["rank"] is not None for r in results]),
         "all_facts_verbatim": share([r["all_verbatim"] for r in results]),
+        "all_facts_normalized": share([r["all_normalized"] for r in results]),
         "all_facts_judged": share([r["all_stated"] for r in results]),
         "grounded": share([None if r["grounded"] is None else r["grounded"] == "yes" for r in results]),
         "facts": len(facts),
         "facts_verbatim": share([f["verbatim"] for f in facts]),
+        "facts_normalized": share([f["normalized"] for f in facts]),
         "facts_judged": share([f["stated"] for f in facts]),
         "errors": sum(bool(r["errors"]) for r in results),
     }
@@ -146,27 +152,28 @@ def print_report(summary: dict, by_retrieval: dict[str, dict], results: list[dic
     def pct(x: float | None) -> str:
         return "   –" if x is None else f"{x:>4.0%}"
 
-    print(f"\n{'':<22} {'n':>3}  {'all facts':>17}  {'per fact':>17}  {'grounded':>8}")
-    print(f"{'':<22} {'':>3}  {'verbatim':>8} {'judge':>8}  {'verbatim':>8} {'judge':>8}")
+    checks = ("verbatim", "normalized", "judged")
+    print(f"\n{'':<22} {'n':>3}  {'all facts':>26}  {'per fact':>26}  {'grounded':>8}")
+    print(f"{'':<22} {'':>3}  {'verbatim':>8} {'normal.':>8} {'judge':>8}  {'verbatim':>8} {'normal.':>8} {'judge':>8}")
     for label, s in {"all": summary, **by_retrieval}.items():
         if s["n"]:
-            print(
-                f"{label:<22} {s['n']:>3}  {pct(s['all_facts_verbatim']):>8} {pct(s['all_facts_judged']):>8}  "
-                f"{pct(s['facts_verbatim']):>8} {pct(s['facts_judged']):>8}  {pct(s['grounded']):>8}"
-            )
+            all_facts = " ".join(f"{pct(s[f'all_facts_{c}']):>8}" for c in checks)
+            per_fact = " ".join(f"{pct(s[f'facts_{c}']):>8}" for c in checks)
+            print(f"{label:<22} {s['n']:>3}  {all_facts}  {per_fact}  {pct(s['grounded']):>8}")
     if summary["errors"]:
         print(f"\nScorer errors in {summary['errors']} cases:")
         for r in results:
             for name, error in r["errors"].items():
                 print(f"  {r['id']} {name}: {error}")
 
-    # Where the two fact checks disagree, one of them is wrong: these are the cases to read.
-    paraphrased = [(r, f) for r in results for f in r["facts"] if f["stated"] and not f["verbatim"]]
-    contradicted = [(r, f) for r in results for f in r["facts"] if f["verbatim"] and f["stated"] is False]
+    # Where the free check and the judge disagree, one of them is wrong: these are the cases to read.
+    # The normalized check, not the verbatim one: abbreviations written out are not worth reading.
+    paraphrased = [(r, f) for r in results for f in r["facts"] if f["stated"] and not f["normalized"]]
+    contradicted = [(r, f) for r in results for f in r["facts"] if f["normalized"] and f["stated"] is False]
     unverified = [(r, f) for r in results for f in r["facts"] if f["stated"] and not f["quote_found"]]
     for title, pairs in (
-        ("Judge: stated, but not verbatim (paraphrase?)", paraphrased),
-        ("Verbatim, but judge: not stated (fact too loose, or judge wrong?)", contradicted),
+        ("Judge: stated, but not matched (paraphrase?)", paraphrased),
+        ("Matched, but judge: not stated (fact too loose, or judge wrong?)", contradicted),
         ("Judge's quote not found in the answer", unverified),
     ):
         if pairs:
@@ -244,7 +251,13 @@ def main() -> None:
             {"trace": mlflow.get_trace(a["trace_id"]), "expectations": {"key_facts": a["key_facts"]}} for a in answered
         ]
         evaluation = mlflow.genai.evaluate(
-            data=data, scorers=[scorers.key_facts_verbatim, scorers.fact_coverage, scorers.groundedness()]
+            data=data,
+            scorers=[
+                scorers.key_facts_verbatim,
+                scorers.key_facts_normalized,
+                scorers.fact_coverage,
+                scorers.groundedness(),
+            ],
         )
         results = collect(evaluation.result_df, answered)
         summary = summarize(results)

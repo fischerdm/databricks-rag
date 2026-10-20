@@ -26,7 +26,14 @@ sys.path.insert(0, str(ROOT))
 os.chdir(ROOT)
 
 from evals import duplicates  # noqa: E402
-from evals.checks import DEFAULT_OUT as GOLDEN, case_problems, content_words, load_cases, missing_facts  # noqa: E402
+from evals.checks import (  # noqa: E402
+    DEFAULT_OUT as GOLDEN,
+    case_problems,
+    content_words,
+    load_cases,
+    missing_facts,
+    missing_normalized,
+)
 from evals.duplicates import MAX_DISTANCE  # noqa: E402
 from scripts.ingest_reuters import download_archive, iter_articles  # noqa: E402
 
@@ -74,9 +81,10 @@ ANSWER_HELP = """**The answer the system gave in an answer-scoring run** (`pytho
 🟦 Blue: the judge's quote for a key fact that is not verbatim.
 The judge decided the answer states the fact in other words; check that it does.
 
-Where the two checks disagree, one of them is wrong:
-- **judge ✓, verbatim ✗**: a paraphrase ('2.5 percent' for '2.5 pct'), or the judge is too lenient.
-- **judge ✗, verbatim ✓**: the fact matched by accident (too short or too common), or the judge is wrong.
+**Normalized**: the verbatim check after writing abbreviations one way on both sides ('17.6%' and
+'17.6 pct' both become '17.6 pct'). Where it and the judge disagree, one of them is wrong:
+- **judge ✓, normalized ✗**: a paraphrase ('not yet made' for 'not yet decided'), or the judge is too lenient.
+- **judge ✗, normalized ✓**: the fact matched by accident (too short or too common), or the judge is wrong.
 - **quote not in the answer**: the judge invented its evidence; don't trust that verdict.
 
 **Groundedness**: whether every claim in the answer is supported by the retrieved passages (MLflow's
@@ -120,21 +128,27 @@ def load_runs(auto_filters: bool) -> list[tuple[str, dict[str, dict]]]:
 
 def load_answer_runs() -> list[tuple[str, dict[str, dict]]]:
     """All answer-scoring runs (evals/score_answers.py), newest first, results keyed by case id."""
-    return [
-        (path.name, {r["id"]: r for r in json.loads(path.read_text())["results"]})
-        for path in sorted(RUNS_DIR.glob("*-answers.json"), reverse=True)
-    ]
+    runs = []
+    for path in sorted(RUNS_DIR.glob("*-answers.json"), reverse=True):
+        results = json.loads(path.read_text())["results"]
+        for r in results:
+            # Runs before the normalized check: it is free, so compute it here.
+            missing = missing_normalized(r["key_facts"], r["answer"])
+            for f in r["facts"]:
+                f.setdefault("normalized", f["fact"] not in missing)
+        runs.append((path.name, {r["id"]: r for r in results}))
+    return runs
 
 
 def answer_issues(result: dict) -> list[str]:
     """What to check in one scored answer; empty if both fact checks agree and it is grounded."""
     issues = []
     for f in result["facts"]:
-        if f["stated"] and not f["verbatim"]:
+        if f["stated"] and not f["normalized"]:
             issues.append(f"paraphrase? {f['fact']!r}")
-        elif f["verbatim"] and f["stated"] is False:
+        elif f["normalized"] and f["stated"] is False:
             issues.append(f"judge disagrees on {f['fact']!r}")
-        elif not f["verbatim"] and f["stated"] is False:
+        elif not f["normalized"] and f["stated"] is False:
             issues.append(f"missing {f['fact']!r}")
         if f["stated"] and not f["quote_found"]:
             issues.append(f"judge quote not in answer for {f['fact']!r}")
@@ -526,10 +540,13 @@ else:
     def mark(value: bool | None) -> str:
         return "–" if value is None else ("✓" if value else "✗")
 
-    rows = ["| Key fact | Verbatim | Judge | Judge's quote | Judge's reason |", "|---|---|---|---|---|"]
+    rows = [
+        "| Key fact | Verbatim | Normalized | Judge | Judge's quote | Judge's reason |",
+        "|---|---|---|---|---|---|",
+    ]
     for f in result["facts"]:
         quote = f["quote"] + ("" if f["quote_found"] or not f["stated"] else " ⚠️ not in the answer")
-        cells = [f["fact"], mark(f["verbatim"]), mark(f["stated"]), quote, f["reason"] or ""]
+        cells = [f["fact"], mark(f["verbatim"]), mark(f["normalized"]), mark(f["stated"]), quote, f["reason"] or ""]
         rows.append("| " + " | ".join(c.replace("|", "\\|").replace("\n", " ") for c in cells) + " |")
     st.markdown("\n".join(rows))
 

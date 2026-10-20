@@ -166,19 +166,20 @@ How to read them:
 
 ### Answer metrics
 
-Answers are scored by three checks, run as MLflow scorers ([evals/scorers.py](../evals/scorers.py)). The two judges are Claude (`judge_model`, default `claude-sonnet-5-5`), so the answers (`gpt-4o-mini`) are not graded by a model of their own family.
+Answers are scored by four checks, run as MLflow scorers ([evals/scorers.py](../evals/scorers.py)). The two judges are Claude (`judge_model`, default `claude-sonnet-5-5`), so the answers (`gpt-4o-mini`) are not graded by a model of their own family.
 
 | Check | Kind | Passes if | Misses |
 |---|---|---|---|
 | **verbatim** | Code, free, deterministic | Every key fact appears verbatim in the answer, as in the articles | Paraphrases: '2.5 percent' for '2.5 pct' |
+| **normalized** | Code, free, deterministic | The same, after writing abbreviations one way on both sides (`ABBREVIATIONS` in [evals/checks.py](../evals/checks.py)): '2.5 percent' and '2.5 pct' both become '2.5 pct' | Paraphrases, numbers in words ('nine cts' vs '9 cents') |
 | **judge** (`fact_coverage`) | LLM judge, one verdict per fact | The judge finds every key fact in the answer, in any wording, and quotes the words that state it | Whatever the judge gets wrong; hence the quote |
 | **grounded** | MLflow's built-in `RetrievalGroundedness` judge | Every claim in the answer is supported by the retrieved passages | Wrong facts that the passages also contain |
 
 Each is reported per case ('all facts') and, for the two fact checks, per fact. The key facts measure *completeness*; groundedness measures *faithfulness*. An answer can be complete and still invent a claim, or faithful and still miss the point, so neither replaces the other.
 
-**Why two fact checks.** Where they agree, the verdict is almost certainly right. Where they disagree, one of them is wrong, and those are the cases to read:
+**Why a free check and a judge.** Where they agree, the verdict is almost certainly right. Where they disagree, one of them is wrong, and those are the cases to read. The report lists them for the normalized check; the strict verbatim check is kept to show how much the normalising adds.
 
-| Verbatim | Judge | Usually means |
+| Normalized | Judge | Usually means |
 |---|---|---|
 | ✗ | ✓ | A paraphrase, which the judge rightly accepts; or a lenient judge |
 | ✓ | ✗ | A key fact that matches by accident (too short, too common); or a wrong judge |
@@ -461,8 +462,35 @@ This confirms the order of work: retrieval first. Improving the answer prompt ha
 
 **Next.**
 
-- Normalise Reuters abbreviations in the verbatim check ('mln' = 'million', 'pct' = 'percent' or '%', 'dlrs' = 'dollars', 'cts' = 'cents') and measure how much of the 40-point gap the free check closes.
+- Normalise Reuters abbreviations in the verbatim check ('mln' = 'million', 'pct' = 'percent' or '%', 'dlrs' = 'dollars', 'cts' = 'cents') and measure how much of the 40-point gap the free check closes. Done: see the next entry.
 - Answer quality is bounded by retrieval: the remaining gains are q0012, q0021 and q0033, all retrieval problems.
+
+### 2026-10-20: normalising abbreviations closes most of the verbatim gap
+
+**Setup.** No new answers: the stored answers of the three full runs of the answer baseline, rescored with [evals/rescore_verbatim.py](../evals/rescore_verbatim.py), which costs nothing. The judge's verdicts are the stored ones, so all three checks see exactly the same answers.
+
+The abbreviation table was fixed **before** measuring, from the abbreviations that occur in the key facts (mln, dlr/dlrs, pct, cts, N.Z., lb) and the spellings the answer model uses for them (million, dollars, $, percent, %, cents, New Zealand, pound). Both the key fact and the answer are rewritten to one spelling, so '39.3 mln N.Z. Dlr' and '39.3 million New Zealand dollars' both become '39.3 mln new zealand dlr'. Numbers in words and other number formats are left out on purpose: they need a number parser, not a table.
+
+| Mean of 3 runs (min–max) | all facts | per fact |
+|---|---|---|
+| verbatim | 55% (54–56) | 57% (56–59) |
+| **normalized** | **84%** (84–84) | **85%** (84–86) |
+| judge | 95% (92–96) | 96% (94–97) |
+
+**Finding 1: the free check now gets within 11 points of the judge, from 40.** Of the 73 facts the judge accepted but the verbatim check did not, 53 now match. None of the new matches is one the judge rejected, so the normalising found no false matches.
+
+**Finding 2: what is left is mostly real paraphrase.** The 20 remaining disagreements:
+
+| Kind | Facts | Example |
+|---|---|---|
+| Paraphrase | 13 | q0009 'oils and fats tax' → 'tax on edible oils and fats'; q0042 'determined to support' → 'the determination of Mr. Baker to support' |
+| Abbreviation spelled out, not in the table | 3 | q0019 '46.496 Ecus' → '46.496 European Currency Units (ECUs)' |
+| Number format | 3 | q0041 '330,000,000' → '330 million dollars' |
+| Number in words | 1 | q0011 'nine cts' → '9 cents' |
+
+Adding 'Ecus' now would be tuning on the cases we report, so the table stays as fixed; it is a candidate for the next new cases. The paraphrases are what the judge is for.
+
+**Consequence.** The normalized check is now a scorer in [evals/scorers.py](../evals/scorers.py) and a column in the report and the review UI, and the disagreement lists use it instead of the verbatim check: 20 cases to read per three runs instead of 73. The judge stays the score; the normalized check is a free floor that agrees with it on 85% of facts, which makes a jump in the judge's numbers between two runs easy to cross-check.
 
 ## 7. Pitfalls
 
