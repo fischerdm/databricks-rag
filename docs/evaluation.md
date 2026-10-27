@@ -177,6 +177,26 @@ Answers are scored by four checks, run as MLflow scorers ([evals/scorers.py](../
 
 Each is reported per case ('all facts') and, for the two fact checks, per fact. The key facts measure *completeness*; groundedness measures *faithfulness*. An answer can be complete and still invent a claim, or faithful and still miss the point, so neither replaces the other.
 
+All four checks run on every answer; the judges are not a fallback for when the free checks fail. What happens afterwards depends on whether the checks agree:
+
+```mermaid
+flowchart TD
+    A["Answer, retrieved passages, key facts"] --> V["verbatim<br/>string match, free"]
+    A --> N["normalized<br/>abbreviations written one way, free"]
+    A --> J["judge: fact_coverage<br/>Claude, one verdict and quote per fact"]
+    A --> G["grounded<br/>Claude: every claim supported by the passages?"]
+    J --> Q{"Quote found<br/>in the answer?"}
+    Q -- no --> R["Listed for review:<br/>judge invented its evidence"]
+    N --> C{"Normalized check<br/>and judge agree?"}
+    Q -- yes --> C
+    C -- no --> D["Listed for review:<br/>paraphrase, fact too loose, or judge wrong"]
+    C -- yes --> S["Verdict almost certainly right"]
+    V --> T["Summary: all facts and per fact,<br/>for each check, plus grounded"]
+    S --> T
+    D --> T
+    G --> T
+```
+
 **Why a free check and a judge.** Where they agree, the verdict is almost certainly right. Where they disagree, one of them is wrong, and those are the cases to read. The report lists them for the normalized check; the strict verbatim check is kept to show how much the normalising adds.
 
 | Normalized | Judge | Usually means |

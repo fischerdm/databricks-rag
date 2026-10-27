@@ -15,6 +15,7 @@ How the Databricks workspace for this project was set up: the account, the CLI, 
 9. [Vector Search](#9-vector-search)
 10. [Pointing the app at Vector Search](#10-pointing-the-app-at-vector-search)
 11. [Deploying the app](#11-deploying-the-app)
+12. [Evaluation job](#12-evaluation-job)
 
 ---
 
@@ -214,3 +215,61 @@ How the app is configured, all in [databricks.yml](../databricks.yml):
 | `API_URL=http://127.0.0.1:$DATABRICKS_APP_PORT` in the start command | The Chainlit UI calls `/query` in the same process over HTTP, so it needs the port the platform assigns |
 
 `.env` and `data/` are git-ignored, so the bundle does not upload them. A running app uses compute; stop it with `databricks apps stop rag-chat` and start it again with `databricks bundle run rag_chat`.
+
+## 12. Evaluation job
+
+The [golden dataset](evaluation.md) runs on Databricks as the job '[dev <user>] rag-evaluate', against the Vector Search index, and logs to the MLflow experiment `rag-evals` in your workspace folder. Both are defined in the bundle. The judges are Claude, so the Anthropic key goes into the secret scope first (`api.anthropic.com` is reachable from serverless compute):
+
+```bash
+databricks secrets put-secret rag anthropic_api_key
+databricks bundle deploy
+databricks bundle run evaluate --params limit=5   # answers and judges on 5 cases, retrieval on all
+databricks bundle run evaluate                    # all 50 cases
+```
+
+[jobs/run_evals.py](../jobs/run_evals.py) runs the same scripts as locally, `evals.evaluate` and `evals.score_answers`, with `VECTOR_BACKEND=databricks`, then compares the results with thresholds and fails the job below them:
+
+| Metric | Threshold | First full run |
+|---|---|---|
+| hit@4 (with filter extraction) | 90% | 94% |
+| All key facts stated (judge) | 90% | 94% (100% when the expected article is retrieved) |
+| Grounded in the retrieved passages | 95% | 100% |
+
+The thresholds sit somewhat below the baseline, since the LLM steps vary by a few points between identical runs ([evaluation-in-ci.md](evaluation-in-ci.md#2-the-evaluation-as-a-ci-gate-on-databricks)). A run costs cents for the answers and tens of cents for the judges.
+
+In the experiment, each job run leaves two MLflow runs: 'answers …' with every question as a trace (retrieval, OpenAI calls, the judges' verdicts) and the full record as `answers.json`, and 'retrieval …' with hit@1, hit@k and MRR and the per-case results as `retrieval.json`. A failed gate names the metric; the traces show which questions caused it.
+
+The scripts run as subprocesses in a temporary copy of the repo: serverless runs the job file inside a kernel with its own event loop, which the scripts' `asyncio.run()` does not accept. The subprocesses get the workspace host and a token from the job's own credentials, and only the other authentication variables are removed from their environment; MLflow needs `DATABRICKS_RUNTIME_VERSION`.
+
+### What exists of the CI design
+
+[evaluation-in-ci.md](evaluation-in-ci.md#2-the-evaluation-as-a-ci-gate-on-databricks) sketches the evaluation as a CI gate. In this repo, ✅ is built and ○ is still open:
+
+```
+ Developer changes the prompt, model, top_k, ...
+        │
+        ▼
+ ┌──────────────────────────── Pull request ───────────────────────────┐
+ │  ✅ ① Fast checks: GitHub Actions, ruff · evals.checks              │
+ │                                                                     │
+ │  ○  Start ② from GitHub Actions (needs a service principal and      │
+ │     its credentials as GitHub secrets); today it is started by hand │
+ │        │                                                            │
+ │        ▼                                                            │
+ │  ✅ ② Job 'rag-evaluate' (databricks bundle run evaluate)           │
+ │       evals.evaluate · evals.score_answers · Vector Search backend  │
+ │       golden dataset ─► filters → Vector Search → answer → judges   │
+ │        │                                                            │
+ │        ├──► ✅ MLflow experiment 'rag-evals': runs, traces, verdicts│
+ │        ▼                                                            │
+ │  ✅ Gate: hit@4 ≥ 90%, all facts (judge) ≥ 90%, grounded ≥ 95%      │
+ │       below ──► the job fails                                       │
+ └────────┼────────────────────────────────────────────────────────────┘
+          ▼
+ Merge to main ──► ✅ deploy (databricks bundle deploy / run rag_chat)
+                       Databricks App 'rag-chat' instead of a Model Serving endpoint
+                                     │
+                                     ▼
+ ○ Production monitoring: tracing live requests, judging a sample,
+   feeding failed questions back into the golden dataset
+```

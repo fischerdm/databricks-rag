@@ -68,7 +68,41 @@ resources:
             securable_full_name: ${var.catalog}.${var.schema}.chunks_index
             permission: SELECT
 
+  experiments:
+    rag_evals:
+      name: /Users/${workspace.current_user.userName}/rag-evals
+
   jobs:
+    evaluate:
+      name: rag-evaluate
+      description: Golden-dataset evaluation against Vector Search, logged to MLflow; fails below the thresholds
+      parameters:
+        # 0 = all cases; e.g. `databricks bundle run evaluate --params limit=5` for a cheap trial of the answers.
+        - name: limit
+          default: "0"
+      tasks:
+        - task_key: evaluate
+          environment_key: evals
+          spark_python_task:
+            python_file: jobs/run_evals.py
+            parameters:
+              - --repo-root
+              - ${workspace.file_path}
+              - --index
+              - ${var.catalog}.${var.schema}.chunks_index
+              - --experiment
+              - ${resources.experiments.rag_evals.name}
+              - --limit
+              - "{{job.parameters.limit}}"
+      environments:
+        - environment_key: evals
+          spec:
+            environment_version: "4"
+            dependencies:
+              - -r ${workspace.file_path}/requirements.txt
+              - mlflow>=3.17
+              - anthropic>=1.15
+
     ingest_chunks:
       name: rag-ingest-chunks
       description: Parse, chunk and embed Reuters-21578 into ${var.catalog}.${var.schema}.chunks
