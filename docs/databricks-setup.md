@@ -247,6 +247,16 @@ The scripts run as subprocesses in a temporary copy of the repo: serverless runs
 
 The `ci` target contains only the evaluation job and the experiment `/Shared/rag-evals-ci`; the shared resources (endpoint, index, app, ingest job) are defined under the `dev` target, so a CI run cannot change them. There is one `ci` deployment, so runs take turns (`concurrency` in the workflow).
 
+How long the checks take, measured on the first pull request with both (PR #4, 50 cases):
+
+| Check | Duration | Of which |
+|---|---|---|
+| `checks` (ruff, `evals.checks`) | 11 s | |
+| `evaluate` (Evaluate on Databricks) | 3 min 22 s | about 1 min on GitHub (checkout, CLI, `bundle deploy`), about 2 min for the Databricks job |
+| Waiting for a GitHub runner | varies, about 2.5 min that time | before `evaluate` starts; not part of the check's duration |
+
+Within the Databricks job, most of the time is fixed: starting serverless compute and installing the packages (`requirements.txt`, `mlflow`, `anthropic`). A trial with 5 answered cases took 1.4 minutes, the full run 1.9. The evaluation itself runs in parallel: scoring all 50 answers took 11 seconds. The two checks run at the same time, as separate workflows. A full run costs roughly 20 to 25 cents for the Claude judges (estimated: two full runs and two 5-case trials came to 48 cents), plus a few cents for OpenAI.
+
 The workflow authenticates as the service principal `rag-ci`, set up once:
 
 ```bash
@@ -280,23 +290,23 @@ The secret expires after two years (the first one on 2028-10-26); create a new o
         │
         ▼
  ┌──────────────────────────── Pull request ───────────────────────────┐
- │  ✅ ① Fast checks: GitHub Actions, ruff · evals.checks              │
+ │  ✓ (1) Fast checks: GitHub Actions, ruff · evals.checks             │
  │                                                                     │
- │  ✅ Workflow 'Evaluate on Databricks', when code changes:           │
+ │  ✓ Workflow 'Evaluate on Databricks', when code changes:            │
  │       databricks bundle deploy -t ci, as service principal rag-ci   │
  │        │                                                            │
  │        ▼                                                            │
- │  ✅ ② Job 'rag-evaluate' (databricks bundle run evaluate -t ci)     │
+ │  ✓ (2) Job 'rag-evaluate' (databricks bundle run evaluate -t ci)    │
  │       evals.evaluate · evals.score_answers · Vector Search backend  │
  │       golden dataset ─► filters → Vector Search → answer → judges   │
  │        │                                                            │
- │        ├──► ✅ MLflow experiment '/Shared/rag-evals-ci'             │
+ │        ├──► ✓ MLflow experiment '/Shared/rag-evals-ci'              │
  │        ▼                                                            │
- │  ✅ Gate: hit@4 ≥ 90%, all facts (judge) ≥ 90%, grounded ≥ 95%      │
+ │  ✓ Gate: hit@4 ≥ 90%, all facts (judge) ≥ 90%, grounded ≥ 95%       │
  │       below ──► the job fails, and with it the PR check             │
  └────────┼────────────────────────────────────────────────────────────┘
           ▼
- Merge to main ──► ○ deploy on merge; today by hand (✅ databricks bundle deploy / run rag_chat)
+ Merge to main ──► ○ deploy on merge; today by hand (✓ databricks bundle deploy / run rag_chat)
                        Databricks App 'rag-chat' instead of a Model Serving endpoint
                                      │
                                      ▼
