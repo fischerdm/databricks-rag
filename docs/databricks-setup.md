@@ -14,6 +14,7 @@ How the Databricks workspace for this project was set up: the account, the CLI, 
 8. [Chunk table: the ingest job](#8-chunk-table-the-ingest-job)
 9. [Vector Search](#9-vector-search)
 10. [Pointing the app at Vector Search](#10-pointing-the-app-at-vector-search)
+11. [Deploying the app](#11-deploying-the-app)
 
 ---
 
@@ -191,3 +192,25 @@ Retrieval on the [golden dataset](evaluation.md) (`python -m evals.evaluate --re
 | With filter extraction (`TOPIC_MODE=off`): hit@1 / hit@4 / MRR | 88% / 94% / 0.91 | 88% / 94% / 0.91 |
 
 The six cases not ranked first are the same on both, with the same articles in the same order.
+
+## 11. Deploying the app
+
+The bundle defines the API and the chat UI as a Databricks App, `rag-chat`, running the same `uvicorn app.main:app` as locally. `bundle deploy` creates or updates the app's definition; `bundle run` uploads the code, installs `requirements.txt` and (re)starts it:
+
+```bash
+databricks bundle deploy
+databricks bundle run rag_chat
+```
+
+The first start takes about a minute. The app's URL is printed at the end and shown under **Compute** → **Apps**, together with its logs (also `databricks apps logs rag-chat`). Opening it requires a Databricks login; by default only you and workspace admins can use it, and others need **Can use** permission on the app.
+
+How the app is configured, all in [databricks.yml](../databricks.yml):
+
+| Setting | Why |
+|---|---|
+| `VECTOR_BACKEND=databricks`, `DATABRICKS_INDEX` | Search goes to the Vector Search index (section 10) |
+| `OPENAI_API_KEY` from the secret resource `openai-api-key` | The key is injected as an environment variable at start; it never appears in the code or the bundle |
+| `SELECT` on `workspace.rag.chunks_index` (resource `chunks-index`) | The app runs as its own service principal, which needs read access to the index. The Databricks SDK in the app authenticates as that principal automatically |
+| `API_URL=http://127.0.0.1:$DATABRICKS_APP_PORT` in the start command | The Chainlit UI calls `/query` in the same process over HTTP, so it needs the port the platform assigns |
+
+`.env` and `data/` are git-ignored, so the bundle does not upload them. A running app uses compute; stop it with `databricks apps stop rag-chat` and start it again with `databricks bundle run rag_chat`.

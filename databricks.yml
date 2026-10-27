@@ -37,6 +37,37 @@ resources:
         # Synced on request (after an ingest run), not continuously, to save compute.
         pipeline_type: TRIGGERED
 
+  apps:
+    rag_chat:
+      name: rag-chat
+      description: Reuters-21578 RAG chatbot (FastAPI + Chainlit) on Vector Search
+      source_code_path: .
+      config:
+        # The UI calls the API in the same process over HTTP (API_URL), so both use the app's port.
+        command:
+          - sh
+          - -c
+          - API_URL=http://127.0.0.1:$DATABRICKS_APP_PORT exec uvicorn app.main:app --host 0.0.0.0 --port $DATABRICKS_APP_PORT
+        env:
+          - name: VECTOR_BACKEND
+            value: databricks
+          - name: DATABRICKS_INDEX
+            value: ${var.catalog}.${var.schema}.chunks_index
+          - name: OPENAI_API_KEY
+            value_from: openai-api-key
+      # Grants for the app's service principal; the names are what value_from refers to.
+      resources:
+        - name: openai-api-key
+          secret:
+            scope: rag
+            key: openai_api_key
+            permission: READ
+        - name: chunks-index
+          uc_securable:
+            securable_type: TABLE
+            securable_full_name: ${var.catalog}.${var.schema}.chunks_index
+            permission: SELECT
+
   jobs:
     ingest_chunks:
       name: rag-ingest-chunks
