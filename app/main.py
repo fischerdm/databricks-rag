@@ -3,7 +3,7 @@ import uuid
 from pathlib import Path
 
 from chainlit.utils import mount_chainlit
-from fastapi import BackgroundTasks, FastAPI
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.responses import RedirectResponse, StreamingResponse
 
 from app.config import get_settings
@@ -46,6 +46,10 @@ async def index_document(doc: DocumentInput, background_tasks: BackgroundTasks) 
     Accept text and index it into the vector database in the background,
     so the client does not have to wait for processing.
     """
+    # Refuse up front: the background task would fail after a 202, so nothing gets indexed while
+    # the client is told it is queued. On Databricks, only the ingest job writes to the corpus.
+    if get_settings().vector_backend == "databricks":
+        raise HTTPException(501, "Indexing is not supported with VECTOR_BACKEND=databricks; run the ingest job instead")
     document_id = str(uuid.uuid4())
     background_tasks.add_task(index_document_task, document_id, doc.content, doc.metadata)
     return IndexResponse(
