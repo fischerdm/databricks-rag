@@ -28,8 +28,11 @@ def index_document_task(document_id: str, content: str, metadata: dict) -> None:
 
 
 @app.get("/", include_in_schema=False)
+@app.get("/ui", include_in_schema=False)
 async def root() -> RedirectResponse:
-    return RedirectResponse("/ui")
+    # Straight to /ui/ with a relative URL. Starlette's own /ui -> /ui/ redirect is absolute and
+    # built from the Host header, which behind a proxy (Databricks Apps) is localhost:8000.
+    return RedirectResponse("/ui/")
 
 
 @app.get("/health")

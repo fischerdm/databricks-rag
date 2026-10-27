@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     chroma_path: str = "data/chroma"
     collection_name: str = "documents"
 
+    # Where search runs: the local Chroma database, or a Databricks Vector Search index
+    # (app/services/vector_databricks.py, set up as described in docs/databricks-setup.md).
+    vector_backend: Literal["chroma", "databricks"] = "chroma"
+    databricks_index: str = "workspace.rag.chunks_index"
+
     chunk_size: int = 1000
     chunk_overlap: int = 200
     top_k: int = 4

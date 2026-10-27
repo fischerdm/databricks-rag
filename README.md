@@ -18,7 +18,7 @@ A minimal RAG backend: index text over an API, then ask questions and get a stre
 - **Vector store:** Chroma (persisted locally in `data/chroma`)
 - **Chat UI:** Chainlit, served at `/ui`
 
-How it works, component by component: [docs/architecture.md](docs/architecture.md). How it is evaluated: [docs/evaluation.md](docs/evaluation.md).
+How it works, component by component: [docs/architecture.md](docs/architecture.md). How it is evaluated: [docs/evaluation.md](docs/evaluation.md). Setting up the Databricks workspace it is moving to: [docs/databricks-setup.md](docs/databricks-setup.md).
 
 ## Setup
 

@@ -55,9 +55,9 @@ def download_archive() -> None:
     urllib.request.urlretrieve(ARCHIVE_URL, ARCHIVE_PATH)
 
 
-def iter_articles() -> Iterator[tuple[str, str, dict]]:
+def iter_articles(archive_path: Path = ARCHIVE_PATH) -> Iterator[tuple[str, str, dict]]:
     """Yield (document_id, content, metadata) for every article that has a body."""
-    with tarfile.open(ARCHIVE_PATH) as archive:
+    with tarfile.open(archive_path) as archive:
         for member in sorted(archive.getmembers(), key=lambda m: m.name):
             if not member.name.endswith(".sgm"):
                 continue

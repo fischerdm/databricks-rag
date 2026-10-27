@@ -1,12 +1,18 @@
-"""Chunking, embedding and storage in the Chroma vector database."""
+"""Chunking, embedding and storage in the Chroma vector database.
+
+With VECTOR_BACKEND=databricks, search and lookups go to Databricks Vector Search instead
+(vector_databricks.py); writing then happens in the ingest job, not here.
+"""
 
 from functools import lru_cache
+from types import ModuleType
 
 import chromadb
 from openai import OpenAI
 
 from app.config import get_settings
 from app.schemas import MetadataValue, RetrievedChunk, SearchFilters
+from app.services.chunking import chunk_text
 
 
 @lru_cache
@@ -24,26 +30,18 @@ def _collection() -> chromadb.Collection:
     )
 
 
-def chunk_text(text: str, chunk_size: int, overlap: int) -> list[str]:
-    """Split text into overlapping character windows, preferring whitespace boundaries."""
-    text = text.strip()
-    if len(text) <= chunk_size:
-        return [text]
+def _databricks() -> ModuleType | None:
+    """The Databricks backend module, or None when Chroma is used. Imported lazily, so Chroma needs no SDK."""
+    if get_settings().vector_backend != "databricks":
+        return None
+    from app.services import vector_databricks
 
-    chunks = []
-    start = 0
-    while start < len(text):
-        end = min(start + chunk_size, len(text))
-        if end < len(text):
-            # Back off to the last whitespace so words are not cut in half.
-            boundary = text.rfind(" ", start + overlap + 1, end)
-            if boundary != -1:
-                end = boundary
-        chunks.append(text[start:end].strip())
-        if end == len(text):
-            break
-        start = end - overlap
-    return [c for c in chunks if c]
+    return vector_databricks
+
+
+def _require_chroma(action: str) -> None:
+    if _databricks():
+        raise RuntimeError(f"{action} is not supported with VECTOR_BACKEND=databricks; run the ingest job instead")
 
 
 def embed(texts: list[str]) -> list[list[float]]:
@@ -60,6 +58,7 @@ def add_documents(documents: list[tuple[str, str, dict[str, MetadataValue]]]) ->
     Returns the number of chunks written. Upserts by chunk id, so re-adding a document
     with the same id overwrites it instead of duplicating it.
     """
+    _require_chroma("Indexing")
     settings = get_settings()
     ids, chunks, metadatas = [], [], []
     for document_id, content, metadata in documents:
@@ -83,6 +82,7 @@ def update_metadata(documents: list[tuple[str, str, dict[str, MetadataValue | No
     Takes the same tuples as add_documents. Chroma merges metadata on update, so a key
     set to None is deleted. Returns the number of chunks updated.
     """
+    _require_chroma("Updating metadata")
     settings = get_settings()
     ids, metadatas = [], []
     for document_id, content, metadata in documents:
@@ -96,6 +96,8 @@ def update_metadata(documents: list[tuple[str, str, dict[str, MetadataValue | No
 
 def document_metadata(document_ids: list[str]) -> dict[str, dict[str, MetadataValue]]:
     """Return each indexed document's metadata, read from its first chunk. Unknown ids are left out."""
+    if databricks := _databricks():
+        return databricks.document_metadata(document_ids)
     if not document_ids:
         return {}
     result = _collection().get(ids=[f"{d}:0" for d in document_ids], include=["metadatas"])
@@ -110,6 +112,8 @@ def document_distances(query: str, document_ids: list[str]) -> dict[str, float]:
     if not document_ids:
         return {}
     query_vec = embed([query])[0]
+    if databricks := _databricks():
+        return databricks.document_distances(query_vec, document_ids)
     query_norm = sum(x * x for x in query_vec) ** 0.5
     result = _collection().get(where={"document_id": {"$in": document_ids}}, include=["embeddings", "metadatas"])
     distances: dict[str, float] = {}
@@ -127,6 +131,8 @@ def similar_documents(document_id: str, max_distance: float, limit: int = 10) ->
     Comparing first chunks (title, date and opening paragraph) finds re-sent and rewritten
     versions of one news story. Returns {document_id: distance}, closest first.
     """
+    if databricks := _databricks():
+        return databricks.similar_documents(document_id, max_distance, limit)
     own = _collection().get(ids=[f"{document_id}:0"], include=["embeddings"])
     if not len(own["ids"]):
         return {}
@@ -153,6 +159,8 @@ def build_filter(filters: SearchFilters) -> dict | None:
 
 
 def search(query: str, top_k: int, filters: SearchFilters | None = None) -> list[RetrievedChunk]:
+    if databricks := _databricks():
+        return databricks.search(embed([query])[0], top_k, filters)
     where = build_filter(filters) if filters else None
     result = _collection().query(query_embeddings=embed([query]), n_results=top_k, where=where)
     return [
