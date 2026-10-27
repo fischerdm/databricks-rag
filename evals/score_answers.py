@@ -12,7 +12,8 @@ check and the judge, and writes the full results to evals/runs/ for the review a
 The answers are generated here rather than by evaluate's predict_fn: it runs each call in a new
 event loop, and the app's async OpenAI client is bound to one loop.
 
-Results are logged to the MLflow tracking store in MLFLOW_TRACKING_URI (default: sqlite:///mlflow.db).
+Results are logged to the MLflow tracking store in MLFLOW_TRACKING_URI (default: sqlite:///mlflow.db),
+in the experiment MLFLOW_EXPERIMENT_NAME (default: rag-answers).
 View them with:
     .venv/bin/mlflow ui --backend-store-uri sqlite:///mlflow.db
 """
@@ -226,7 +227,9 @@ def main() -> None:
     scorable = [c for c in cases if any(d in metadata for d in c["expected_doc_ids"])][: args.limit]
 
     mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db"))
-    mlflow.set_experiment(EXPERIMENT)
+    # On Databricks an experiment is a workspace path, so the job passes one (jobs/run_evals.py).
+    experiment = os.environ.get("MLFLOW_EXPERIMENT_NAME", EXPERIMENT)
+    mlflow.set_experiment(experiment)
     # Adds every OpenAI call (filter extraction, embedding, answer) to the trace, with prompts and tokens.
     # silent: logging the filter extractor's parsed output triggers harmless Pydantic serializer warnings.
     mlflow.openai.autolog(silent=True)
@@ -282,7 +285,7 @@ def main() -> None:
         "results": results,
     }
     run_path.write_text(json.dumps(run_record, indent=2))
-    print(f"\nFull results: {run_path}\nMLflow run: {run.info.run_id} (experiment '{EXPERIMENT}')")
+    print(f"\nFull results: {run_path}\nMLflow run: {run.info.run_id} (experiment '{experiment}')")
 
 
 if __name__ == "__main__":
