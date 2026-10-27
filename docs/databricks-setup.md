@@ -1,6 +1,6 @@
 # Setting up the Databricks workspace
 
-How the Databricks workspace for this project was set up: the account, the CLI, the network check, the raw data and the OpenAI key. Later steps (chunk table, Vector Search, the app) build on what is created here.
+How the Databricks workspace for this project was set up: the account, the CLI, the network check, the raw data and the OpenAI key, then the chunk table, the Vector Search index and the switch that points the app at it.
 
 **Contents**
 
@@ -11,6 +11,9 @@ How the Databricks workspace for this project was set up: the account, the CLI, 
 5. [Raw data in Unity Catalog](#5-raw-data-in-unity-catalog)
 6. [OpenAI key as a secret](#6-openai-key-as-a-secret)
 7. [Result](#7-result)
+8. [Chunk table: the ingest job](#8-chunk-table-the-ingest-job)
+9. [Vector Search](#9-vector-search)
+10. [Pointing the app at Vector Search](#10-pointing-the-app-at-vector-search)
 
 ---
 
@@ -148,4 +151,43 @@ The key is not tested at this point; a wrong value shows up as an HTTP 401 on th
 | Raw archive | `/Volumes/workspace/rag/raw/reuters21578.tar.gz` |
 | Secret scope / key | `rag` / `openai_api_key` |
 
-Next: an ingest job that parses and chunks the archive, embeds the chunks with OpenAI and writes them to a Delta table `workspace.rag.chunks`, deployed as a Databricks Asset Bundle.
+## 8. Chunk table: the ingest job
+
+Everything from here on is defined in a Databricks Asset Bundle, [databricks.yml](../databricks.yml), and deployed with one command. The bundle sets no workspace host; it uses the CLI's default profile.
+
+```bash
+databricks bundle deploy
+databricks bundle run ingest_chunks --params limit=200   # sample
+databricks bundle run ingest_chunks                      # whole corpus
+```
+
+[jobs/ingest_chunks.py](../jobs/ingest_chunks.py) runs on serverless compute. It reads the archive from the volume, parses and chunks it with the same code as the local ingest (`scripts.ingest_reuters.iter_articles`, `app.services.chunking.chunk_text`), embeds each chunk with OpenAI (key from the `rag` scope) and writes one row per chunk to `workspace.rag.chunks`, with Change Data Feed enabled for Vector Search. Each run replaces the table's rows. The full corpus takes about 5 minutes: 19,043 articles, 28,261 chunks.
+
+Two serverless details shaped the job: the script runs through `exec()` without `__file__`, so the bundle passes the repo root as `--repo-root ${workspace.file_path}`; and `--python-params` on `bundle run` would replace all task parameters, so the sample size is a job parameter (`limit`, `0` = everything).
+
+The job appears under **Jobs & Pipelines** as '[dev <user>] rag-ingest-chunks' (development mode adds the prefix), the table under **Catalog** → `workspace` → `rag`.
+
+## 9. Vector Search
+
+The bundle also defines a standard endpoint `rag` and a Delta Sync index `workspace.rag.chunks_index` on the chunk table, using the job's embeddings (`embedding`, 1,536 dimensions) rather than computing its own. The endpoint takes several minutes to come up on the first deploy. The index syncs on request, so after an ingest run:
+
+```bash
+databricks vector-search-indexes sync-index workspace.rag.chunks_index
+```
+
+If a deploy is interrupted while it waits for the index, check `databricks bundle plan`: when it wants to create the index again, `databricks bundle deployment bind chunks_index workspace.rag.chunks_index` links the existing one.
+
+## 10. Pointing the app at Vector Search
+
+`VECTOR_BACKEND=databricks` (in `.env` or the environment) makes search and lookups go to the index instead of Chroma, through [app/services/vector_databricks.py](../app/services/vector_databricks.py). Locally, the Databricks SDK authenticates with the CLI profile; query embeddings still come from OpenAI. Indexing over `POST /index` is not available with this backend: the ingest job writes the data.
+
+Vector Search ranks by L2 distance and reports `score = 1 / (1 + L2²)`. OpenAI embeddings have unit length, so `(1 / score − 1) / 2` is the cosine distance Chroma reports; distances, and with them `TOPIC_BOOST`, mean the same on both backends. Numbers come back as floats and are converted back to integers.
+
+Retrieval on the [golden dataset](evaluation.md) (`python -m evals.evaluate --reviewed-only`, 50 cases, top 4):
+
+| | Chroma | Vector Search |
+|---|---|---|
+| Without filter extraction: hit@1 / hit@4 / MRR | 88% / 96% / 0.92 | 88% / 96% / 0.92 |
+| With filter extraction (`TOPIC_MODE=off`): hit@1 / hit@4 / MRR | 88% / 94% / 0.91 | 88% / 94% / 0.91 |
+
+The six cases not ranked first are the same on both, with the same articles in the same order.
