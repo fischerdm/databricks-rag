@@ -140,6 +140,19 @@ Examples from the first review:
 
 For each question, the search returns the `top_k` (default 4) closest chunks. Chunks of the same article are merged, which gives a ranked list of articles. Every metric is based on **where the expected article lands in that list**.
 
+**From chunks to articles.** Search works with chunks (up to 1,000 characters each); the metrics score articles. Take q0025, 'What would Allis-Chalmers keep under its restructuring plan?', whose expected article is reuters-1860:
+
+| Chunk rank | Chunk | From article |
+|---|---|---|
+| 1 | reuters-19849:0 | reuters-19849, 'Allis-Chalmers lists main creditors' |
+| 2 | reuters-1860:0 | reuters-1860, 'Allis-Chalmers proposes restructuring' |
+| 3 | reuters-1860:1 | reuters-1860 |
+| 4 | reuters-1860:2 | reuters-1860 |
+
+Each article counts once, in the order it first appears, so the four chunks become two articles: 1. reuters-19849, 2. reuters-1860. The expected article is ranked second: no hit@1, a hit@4, and 0.5 towards the MRR (`doc_rank` in [evals/evaluate.py](../evals/evaluate.py)).
+
+The *k* in hit@k is therefore the number of chunks searched (`top_k`), not of articles: depending on the question, the four chunks come from one to four different articles. The articles are what is scored, because the golden dataset names the article that holds the answer (`expected_doc_ids`), not a chunk: which chunk contains it depends on where the text was cut. Once any chunk of that article is retrieved, the answer model sees its text.
+
 | Metric | Per question | Over all questions |
 |---|---|---|
 | **hit@1** | 1 if an expected article is ranked **first**, else 0 | Share of questions where it came first |
