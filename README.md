@@ -125,9 +125,13 @@ Results land in the MLflow experiment `/Shared/rag-evals-ci`: each run logs ever
 
 ## Not built yet
 
+Some gaps of the upstream boilerplate are already closed on Databricks: only the ingest job writes to the corpus (indexing over `POST /index` is disabled with the Vector Search backend, and the app's service principal can only read the index), and opening the app requires a Databricks login with 'Can use' permission. Still open:
+
 - Deployment on merge to `main`; today the app is deployed with `databricks bundle run rag_chat` by hand.
 - Switching embeddings and answers to Databricks Foundation Models, as a separate step measured by the evaluation.
-- Production monitoring: tracing live requests, judging a sample, and adding failed questions to the golden dataset.
+- Rate limits and cost caps per user: anyone with access can send any number of queries, capped only by the OpenAI key's spending limit.
+- Input and output guardrails (off-topic or harmful questions, checks on the answer). Databricks AI Gateway provides guardrails and rate limits for Model Serving endpoints, which the app does not use yet: it calls OpenAI directly.
+- Production monitoring: tracing live requests with who asked what, judging a sample, and adding failed questions to the golden dataset.
 
 ## License
 
