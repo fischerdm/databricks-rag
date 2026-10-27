@@ -43,10 +43,10 @@ The golden dataset is a regression test: after every change to prompts, models o
         ▼
  ┌─────────────────────── Pull request (GitHub) ───────────────────────┐
  │                                                                     │
- │  ① Fast checks (GitHub Actions, every push, free, ~1 min)           │
+ │  (1) Fast checks (GitHub Actions, every push, free, ~1 min)         │
  │     ruff · evals.checks (dataset rules) · unit tests                │
  │                                                                     │
- │  ② Evaluation job (Databricks Job, started from GitHub Actions)     │
+ │  (2) Evaluation job (Databricks Job, started from GitHub Actions)   │
  │     │                                                               │
  │     │  golden dataset              (repo file or Unity Catalog      │
  │     │  questions + key facts        table)                          │
@@ -72,10 +72,10 @@ The golden dataset is a regression test: after every change to prompts, models o
  │   Gate: compare with thresholds, or with main's last runs           │
  │     e.g. hit@4 ≥ 90%, all facts (judge) ≥ 90%, grounded ≥ 95%       │
  │     │                                                               │
- │     ├── below ──► ❌ PR check fails: read the traces in MLflow,     │
- │     │             fix, push again (back to ①)                       │
+ │     ├── below ──► ✗ PR check fails: read the traces in MLflow,      │
+ │     │             fix, push again (back to (1))                     │
  │     ▼                                                               │
- │   ✅ PR check passes                                                │
+ │   ✓ PR check passes                                                 │
  └─────┼───────────────────────────────────────────────────────────────┘
        ▼
  Merge to main ──► deploy (Asset Bundle) ──► Model Serving endpoint
