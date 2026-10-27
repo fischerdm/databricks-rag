@@ -241,6 +241,36 @@ In the experiment, each job run leaves two MLflow runs: 'answers …' with every
 
 The scripts run as subprocesses in a temporary copy of the repo: serverless runs the job file inside a kernel with its own event loop, which the scripts' `asyncio.run()` does not accept. The subprocesses get the workspace host and a token from the job's own credentials, and only the other authentication variables are removed from their environment; MLflow needs `DATABRICKS_RUNTIME_VERSION`.
 
+### As a pull request check
+
+[.github/workflows/evaluate.yml](../.github/workflows/evaluate.yml) runs the job on every pull request that changes code, evals, `requirements.txt` or the bundle; documentation-only PRs skip it, since a run costs API calls. It deploys the PR's code to the bundle's `ci` target and runs the job there. If the gate fails, the job fails, and so does the check 'Evaluate on Databricks'. It can also be started by hand under **Actions** (`workflow_dispatch`).
+
+The `ci` target contains only the evaluation job and the experiment `/Shared/rag-evals-ci`; the shared resources (endpoint, index, app, ingest job) are defined under the `dev` target, so a CI run cannot change them. There is one `ci` deployment, so runs take turns (`concurrency` in the workflow).
+
+The workflow authenticates as the service principal `rag-ci`, set up once:
+
+```bash
+databricks service-principals create --display-name rag-ci
+databricks service-principals patch <id> --json '{"schemas":["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+  "Operations":[{"op":"add","path":"entitlements","value":[{"value":"workspace-access"}]}]}'
+databricks secrets put-acl rag <application-id> READ
+databricks grants update catalog workspace --json '{"changes":[{"principal":"<application-id>","add":["USE_CATALOG"]}]}'
+databricks grants update schema workspace.rag --json '{"changes":[{"principal":"<application-id>","add":["USE_SCHEMA"]}]}'
+databricks grants update table workspace.rag.chunks_index --json '{"changes":[{"principal":"<application-id>","add":["SELECT"]}]}'
+```
+
+Its OAuth secret goes straight into a GitHub repository secret, without being printed:
+
+```bash
+databricks service-principal-secrets-proxy create <id> -o json \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['secret'], end='')" \
+  | gh secret set DATABRICKS_CLIENT_SECRET
+printf %s <application-id> | gh secret set DATABRICKS_CLIENT_ID
+printf %s https://<workspace-url> | gh secret set DATABRICKS_HOST
+```
+
+The secret expires after two years (the first one on 2028-10-26); create a new one the same way before then. Pull requests from forks get no repository secrets, so the workflow skips them.
+
 ### What exists of the CI design
 
 [evaluation-in-ci.md](evaluation-in-ci.md#2-the-evaluation-as-a-ci-gate-on-databricks) sketches the evaluation as a CI gate. In this repo, ✅ is built and ○ is still open:
@@ -252,21 +282,21 @@ The scripts run as subprocesses in a temporary copy of the repo: serverless runs
  ┌──────────────────────────── Pull request ───────────────────────────┐
  │  ✅ ① Fast checks: GitHub Actions, ruff · evals.checks              │
  │                                                                     │
- │  ○  Start ② from GitHub Actions (needs a service principal and      │
- │     its credentials as GitHub secrets); today it is started by hand │
+ │  ✅ Workflow 'Evaluate on Databricks', when code changes:           │
+ │       databricks bundle deploy -t ci, as service principal rag-ci   │
  │        │                                                            │
  │        ▼                                                            │
- │  ✅ ② Job 'rag-evaluate' (databricks bundle run evaluate)           │
+ │  ✅ ② Job 'rag-evaluate' (databricks bundle run evaluate -t ci)     │
  │       evals.evaluate · evals.score_answers · Vector Search backend  │
  │       golden dataset ─► filters → Vector Search → answer → judges   │
  │        │                                                            │
- │        ├──► ✅ MLflow experiment 'rag-evals': runs, traces, verdicts│
+ │        ├──► ✅ MLflow experiment '/Shared/rag-evals-ci'             │
  │        ▼                                                            │
  │  ✅ Gate: hit@4 ≥ 90%, all facts (judge) ≥ 90%, grounded ≥ 95%      │
- │       below ──► the job fails                                       │
+ │       below ──► the job fails, and with it the PR check             │
  └────────┼────────────────────────────────────────────────────────────┘
           ▼
- Merge to main ──► ✅ deploy (databricks bundle deploy / run rag_chat)
+ Merge to main ──► ○ deploy on merge; today by hand (✅ databricks bundle deploy / run rag_chat)
                        Databricks App 'rag-chat' instead of a Model Serving endpoint
                                      │
                                      ▼

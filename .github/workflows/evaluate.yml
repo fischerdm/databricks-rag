@@ -1,0 +1,49 @@
+# The golden-dataset evaluation as a pull request check: deploys the PR's code to the bundle's ci
+# target and runs the Databricks job rag-evaluate (jobs/run_evals.py). The job fails below its
+# thresholds, and so does this check. See docs/databricks-setup.md, section 12.
+#
+# Costs API calls (tens of cents per run), so it only runs when code that affects the results
+# changes, not for documentation. Runs as the service principal rag-ci; its OAuth credentials and
+# the workspace URL are repository secrets.
+name: Evaluate on Databricks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "evals/**"
+      - "scripts/**"
+      - "jobs/run_evals.py"
+      - "requirements.txt"
+      - "databricks.yml"
+      - ".github/workflows/evaluate.yml"
+  workflow_dispatch:
+
+# There is one ci deployment, so runs take turns instead of overwriting each other's code.
+concurrency:
+  group: databricks-ci
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    # Pull requests from forks get no secrets; they could not authenticate anyway.
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: databricks/setup-cli@main
+        with:
+          version: 1.22.1
+
+      - name: Deploy the PR's code to the ci target
+        run: databricks bundle deploy -t ci
+
+      - name: Run the evaluation (fails below the thresholds)
+        run: databricks bundle run evaluate -t ci

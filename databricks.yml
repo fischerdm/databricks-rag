@@ -1,7 +1,9 @@
-# Databricks Asset Bundle: the jobs (and later the app) of this project, deployed with
-#   databricks bundle deploy
-# The workspace comes from the CLI's default profile (databricks auth login), so no host is set here.
-# Workspace setup (schema, volume, secret scope): docs/databricks-setup.md.
+# Databricks Asset Bundle: the jobs and the app of this project, deployed with
+#   databricks bundle deploy            (target dev, the default: everything, as your user)
+#   databricks bundle deploy -t ci      (only the evaluation job, as the service principal in GitHub Actions)
+# The workspace comes from the CLI's default profile (databricks auth login), or from the
+# DATABRICKS_* environment variables in CI, so no host is set here.
+# Workspace setup (schema, volume, secret scope, CI service principal): docs/databricks-setup.md.
 bundle:
   name: databricks-rag
 
@@ -10,67 +12,107 @@ variables:
     default: workspace
   schema:
     default: rag
+  experiment:
+    description: MLflow experiment the evaluation logs to
+    default: /Users/${workspace.current_user.userName}/rag-evals
 
 targets:
   dev:
     mode: development
     default: true
+    # Shared resources exist once; only dev deploys them, so CI runs cannot touch them.
+    resources:
+      vector_search_endpoints:
+        rag:
+          name: rag
+          endpoint_type: STANDARD
 
+      vector_search_indexes:
+        chunks_index:
+          name: ${var.catalog}.${var.schema}.chunks_index
+          endpoint_name: ${resources.vector_search_endpoints.rag.name}
+          index_type: DELTA_SYNC
+          primary_key: chunk_id
+          delta_sync_index_spec:
+            source_table: ${var.catalog}.${var.schema}.chunks
+            # Embeddings are computed by the ingest job (OpenAI), not by Databricks.
+            embedding_vector_columns:
+              - name: embedding
+                embedding_dimension: 1536
+            # Synced on request (after an ingest run), not continuously, to save compute.
+            pipeline_type: TRIGGERED
+
+      apps:
+        rag_chat:
+          name: rag-chat
+          description: Reuters-21578 RAG chatbot (FastAPI + Chainlit) on Vector Search
+          source_code_path: .
+          config:
+            # The UI calls the API in the same process over HTTP (API_URL), so both use the app's port.
+            command:
+              - sh
+              - -c
+              - API_URL=http://127.0.0.1:$DATABRICKS_APP_PORT exec uvicorn app.main:app --host 0.0.0.0 --port $DATABRICKS_APP_PORT
+            env:
+              - name: VECTOR_BACKEND
+                value: databricks
+              - name: DATABRICKS_INDEX
+                value: ${var.catalog}.${var.schema}.chunks_index
+              - name: OPENAI_API_KEY
+                value_from: openai-api-key
+          # Grants for the app's service principal; the names are what value_from refers to.
+          resources:
+            - name: openai-api-key
+              secret:
+                scope: rag
+                key: openai_api_key
+                permission: READ
+            - name: chunks-index
+              uc_securable:
+                securable_type: TABLE
+                securable_full_name: ${var.catalog}.${var.schema}.chunks_index
+                permission: SELECT
+
+      jobs:
+        ingest_chunks:
+          name: rag-ingest-chunks
+          description: Parse, chunk and embed Reuters-21578 into ${var.catalog}.${var.schema}.chunks
+          parameters:
+            # 0 = the whole corpus; e.g. `databricks bundle run ingest_chunks --params limit=200` for a sample.
+            - name: limit
+              default: "0"
+          tasks:
+            - task_key: ingest
+              environment_key: default
+              spark_python_task:
+                python_file: jobs/ingest_chunks.py
+                parameters:
+                  - --repo-root
+                  - ${workspace.file_path}
+                  - --archive
+                  - /Volumes/${var.catalog}/${var.schema}/raw/reuters21578.tar.gz
+                  - --table
+                  - ${var.catalog}.${var.schema}.chunks
+                  - --limit
+                  - "{{job.parameters.limit}}"
+          # No cluster: tasks with an environment run on serverless compute.
+          environments:
+            - environment_key: default
+              spec:
+                environment_version: "4"
+                dependencies:
+                  - openai>=3.0
+
+  # Pull requests (.github/workflows/evaluate.yml): the PR's code, evaluated against dev's index.
+  ci:
+    variables:
+      experiment: /Shared/rag-evals-ci
+
+# Deployed by every target.
 resources:
-  vector_search_endpoints:
-    rag:
-      name: rag
-      endpoint_type: STANDARD
-
-  vector_search_indexes:
-    chunks_index:
-      name: ${var.catalog}.${var.schema}.chunks_index
-      endpoint_name: ${resources.vector_search_endpoints.rag.name}
-      index_type: DELTA_SYNC
-      primary_key: chunk_id
-      delta_sync_index_spec:
-        source_table: ${var.catalog}.${var.schema}.chunks
-        # Embeddings are computed by the ingest job (OpenAI), not by Databricks.
-        embedding_vector_columns:
-          - name: embedding
-            embedding_dimension: 1536
-        # Synced on request (after an ingest run), not continuously, to save compute.
-        pipeline_type: TRIGGERED
-
-  apps:
-    rag_chat:
-      name: rag-chat
-      description: Reuters-21578 RAG chatbot (FastAPI + Chainlit) on Vector Search
-      source_code_path: .
-      config:
-        # The UI calls the API in the same process over HTTP (API_URL), so both use the app's port.
-        command:
-          - sh
-          - -c
-          - API_URL=http://127.0.0.1:$DATABRICKS_APP_PORT exec uvicorn app.main:app --host 0.0.0.0 --port $DATABRICKS_APP_PORT
-        env:
-          - name: VECTOR_BACKEND
-            value: databricks
-          - name: DATABRICKS_INDEX
-            value: ${var.catalog}.${var.schema}.chunks_index
-          - name: OPENAI_API_KEY
-            value_from: openai-api-key
-      # Grants for the app's service principal; the names are what value_from refers to.
-      resources:
-        - name: openai-api-key
-          secret:
-            scope: rag
-            key: openai_api_key
-            permission: READ
-        - name: chunks-index
-          uc_securable:
-            securable_type: TABLE
-            securable_full_name: ${var.catalog}.${var.schema}.chunks_index
-            permission: SELECT
-
   experiments:
     rag_evals:
-      name: /Users/${workspace.current_user.userName}/rag-evals
+      name: ${var.experiment}
 
   jobs:
     evaluate:
@@ -102,32 +144,3 @@ resources:
               - -r ${workspace.file_path}/requirements.txt
               - mlflow>=3.17
               - anthropic>=1.15
-
-    ingest_chunks:
-      name: rag-ingest-chunks
-      description: Parse, chunk and embed Reuters-21578 into ${var.catalog}.${var.schema}.chunks
-      parameters:
-        # 0 = the whole corpus; e.g. `databricks bundle run ingest_chunks --params limit=200` for a sample.
-        - name: limit
-          default: "0"
-      tasks:
-        - task_key: ingest
-          environment_key: default
-          spark_python_task:
-            python_file: jobs/ingest_chunks.py
-            parameters:
-              - --repo-root
-              - ${workspace.file_path}
-              - --archive
-              - /Volumes/${var.catalog}/${var.schema}/raw/reuters21578.tar.gz
-              - --table
-              - ${var.catalog}.${var.schema}.chunks
-              - --limit
-              - "{{job.parameters.limit}}"
-      # No cluster: tasks with an environment run on serverless compute.
-      environments:
-        - environment_key: default
-          spec:
-            environment_version: "4"
-            dependencies:
-              - openai>=3.0
