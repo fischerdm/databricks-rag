@@ -17,6 +17,26 @@ targets:
     default: true
 
 resources:
+  vector_search_endpoints:
+    rag:
+      name: rag
+      endpoint_type: STANDARD
+
+  vector_search_indexes:
+    chunks_index:
+      name: ${var.catalog}.${var.schema}.chunks_index
+      endpoint_name: ${resources.vector_search_endpoints.rag.name}
+      index_type: DELTA_SYNC
+      primary_key: chunk_id
+      delta_sync_index_spec:
+        source_table: ${var.catalog}.${var.schema}.chunks
+        # Embeddings are computed by the ingest job (OpenAI), not by Databricks.
+        embedding_vector_columns:
+          - name: embedding
+            embedding_dimension: 1536
+        # Synced on request (after an ingest run), not continuously, to save compute.
+        pipeline_type: TRIGGERED
+
   jobs:
     ingest_chunks:
       name: rag-ingest-chunks
