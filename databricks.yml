@@ -1,0 +1,48 @@
+# Databricks Asset Bundle: the jobs (and later the app) of this project, deployed with
+#   databricks bundle deploy
+# The workspace comes from the CLI's default profile (databricks auth login), so no host is set here.
+# Workspace setup (schema, volume, secret scope): docs/databricks-setup.md.
+bundle:
+  name: databricks-rag
+
+variables:
+  catalog:
+    default: workspace
+  schema:
+    default: rag
+
+targets:
+  dev:
+    mode: development
+    default: true
+
+resources:
+  jobs:
+    ingest_chunks:
+      name: rag-ingest-chunks
+      description: Parse, chunk and embed Reuters-21578 into ${var.catalog}.${var.schema}.chunks
+      parameters:
+        # 0 = the whole corpus; e.g. `databricks bundle run ingest_chunks --params limit=200` for a sample.
+        - name: limit
+          default: "0"
+      tasks:
+        - task_key: ingest
+          environment_key: default
+          spark_python_task:
+            python_file: jobs/ingest_chunks.py
+            parameters:
+              - --repo-root
+              - ${workspace.file_path}
+              - --archive
+              - /Volumes/${var.catalog}/${var.schema}/raw/reuters21578.tar.gz
+              - --table
+              - ${var.catalog}.${var.schema}.chunks
+              - --limit
+              - "{{job.parameters.limit}}"
+      # No cluster: tasks with an environment run on serverless compute.
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "4"
+            dependencies:
+              - openai>=3.0
