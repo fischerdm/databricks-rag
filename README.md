@@ -123,6 +123,12 @@ Documentation-only pull requests skip the evaluation, since it costs API calls. 
 
 Results land in the MLflow experiment `/Shared/rag-evals-ci`: each run logs every question as a trace (retrieval, OpenAI calls, the judges' verdicts), so a failed gate can be traced to the questions that caused it. The same job runs by hand against `dev` with `databricks bundle run evaluate` (add `--params limit=5` for a cheap trial). Details and measured durations: [docs/databricks-setup.md](docs/databricks-setup.md#12-evaluation-job).
 
+<p align="center">
+  <img src="docs/images/pipelines.png" alt="A run of the evaluation job under Jobs & Pipelines: retrieval scores on all 50 cases (hit@1 88%, hit@4 94%, MRR 0.91) and the cases not ranked first, next to the run's details" width="100%">
+</p>
+
+A run of the evaluation job under **Jobs & Pipelines**: the retrieval scores on all 50 cases, then each case where the expected article was not ranked first, with the articles retrieved instead.
+
 ## Not built yet
 
 Some gaps of the upstream boilerplate are already closed on Databricks: only the ingest job writes to the corpus (indexing over `POST /index` is disabled with the Vector Search backend, and the app's service principal can only read the index), and opening the app requires a Databricks login with 'Can use' permission. Still open:
