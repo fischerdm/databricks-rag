@@ -123,6 +123,28 @@ Documentation-only pull requests skip the evaluation, since it costs API calls. 
 
 Results land in the MLflow experiment `/Shared/rag-evals-ci`: each run logs every question as a trace (retrieval, OpenAI calls, the judges' verdicts), so a failed gate can be traced to the questions that caused it. The same job runs by hand against `dev` with `databricks bundle run evaluate` (add `--params limit=5` for a cheap trial). Details and measured durations: [docs/databricks-setup.md](docs/databricks-setup.md#12-evaluation-job).
 
+<p align="center">
+  <img src="docs/images/pipelines.png" alt="A run of the evaluation job under Jobs & Pipelines: retrieval scores on all 50 cases (hit@1 88%, hit@4 94%, MRR 0.91) and the cases not ranked first, next to the run's details" width="100%">
+</p>
+
+A run of the evaluation job under **Jobs & Pipelines**: the retrieval scores on all 50 cases, then each case where the expected article was not ranked first, with the articles retrieved instead.
+
+## Review app
+
+<p align="center">
+  <img src="docs/images/golden-1.png" alt="Review app: a golden case with its key facts checked and highlighted in the expected article" width="49%">
+  <img src="docs/images/golden-2.png" alt="Review app: the scored answer with the judge's quotes, the fact checks and the evaluation runs" width="49%">
+</p>
+
+The 50 golden cases were drafted by an LLM and reviewed by hand in [evals/review_app.py](evals/review_app.py), a Streamlit app. It shows one case at a time next to the full text of its expected articles, checks the dataset rules as you edit, and saves back to `golden.jsonl`. It also lists the cases the latest evaluation runs got wrong, and the answers where the free fact checks and the Claude judge disagree. More in [docs/evaluation.md](docs/evaluation.md#step-2-review-the-cases).
+
+```bash
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/streamlit run evals/review_app.py
+```
+
+The app runs locally, not on Databricks. A read-only demo of it is deployed from the upstream repo on Streamlit Community Cloud: [fastapi-rag-boilerplate.streamlit.app](https://fastapi-rag-boilerplate.streamlit.app/). It shows the same 50 cases, from a saved copy in [evals/demo/](evals/demo/), and the evaluation runs made locally with Chroma, not those on Databricks.
+
 ## Not built yet
 
 Some gaps of the upstream boilerplate are already closed on Databricks: only the ingest job writes to the corpus (indexing over `POST /index` is disabled with the Vector Search backend, and the app's service principal can only read the index), and opening the app requires a Databricks login with 'Can use' permission. Still open:
